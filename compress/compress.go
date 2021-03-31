@@ -16,21 +16,11 @@ func Compress(source string) string {
 	for i, c := range source {
 		if c != current {
 			compressed.WriteString(compressedPart(source, current, start, i))
-			current = c
-			start = i
+			current, start = c, i
 		}
 	}
 	compressed.WriteString(compressedPart(source, current, start, len(source)))
 	return compressed.String()
-}
-
-func compressedPart(source string, current rune, start, i int) string {
-	count := (i - start) / runeSize(current)
-	if count > 4 {
-		return fmt.Sprintf("#%d#%c", count, current)
-	} else {
-		return source[start:i]
-	}
 }
 
 func Decompress(compressed string) string {
@@ -59,6 +49,14 @@ func Decompress(compressed string) string {
 		decompressed.WriteRune(c)
 	}
 	return decompressed.String()
+}
+
+func compressedPart(source string, current rune, start, i int) string {
+	count := (i - start) / runeSize(current)
+	if count > 4 {
+		return fmt.Sprintf("#%d#%c", count, current)
+	}
+	return source[start:i]
 }
 
 func runeSize(r rune) int {
