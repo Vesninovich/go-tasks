@@ -36,18 +36,24 @@ func buildWordMap(source string) map[string]int {
 		inWord    bool
 		wordStart int
 	)
-	for i, c := range source + " " {
-		wordChar := unicode.In(c, unicode.Letter, unicode.Digit)
-		if !wordChar && inWord {
-			word := source[wordStart:i]
-			countsMap[word] += 1
-			inWord = false
-		} else if wordChar && !inWord {
-			wordStart = i
-			inWord = true
-		}
+	for i, c := range source {
+		wordStart, inWord = checkWord(source, countsMap, wordStart, i, c, inWord)
 	}
+	checkWord(source, countsMap, wordStart, len(source), ' ', inWord)
 	return countsMap
+}
+
+func checkWord(source string, counts map[string]int, start, i int, c rune, inWord bool) (int, bool) {
+	wordChar := unicode.In(c, unicode.Letter, unicode.Digit)
+	if !wordChar && inWord {
+		word := source[start:i]
+		counts[word] += 1
+		return start, false
+	}
+	if wordChar && !inWord {
+		return i, true
+	}
+	return start, inWord
 }
 
 func (list wordCountList) Len() int {
