@@ -33,3 +33,17 @@ func runTest(t *testing.T, automorphicFunc func(n uint64) bool, testName string)
 		}
 	}
 }
+
+func BenchmarkAutomorphicMath(b *testing.B) {
+	bench(b, automorphicMath)
+}
+
+func BenchmarkAutomorphicStrings(b *testing.B) {
+	bench(b, automorphicStrings)
+}
+
+func bench(b *testing.B, f func(n uint64) bool) {
+	for i := 0; i < b.N; i++ {
+		f(uint64(i))
+	}
+}
