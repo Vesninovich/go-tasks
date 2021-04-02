@@ -5,3 +5,5 @@
 [Задание 2 (компрессия/декомпрессия)](compress) [PR #2](https://github.com/Vesninovich/go-tasks/pull/2)
 
 [Задание 3 (подсчёт слов)](wordcount) [PR #3](https://github.com/Vesninovich/go-tasks/pull/3)
+
+[Задание 4 (Шифр Цезаря)](caesar) [PR #4](https://github.com/Vesninovich/go-tasks/pull/4)
