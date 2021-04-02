@@ -33,3 +33,21 @@ func runTest(t *testing.T, automorphicFunc func(n uint64) bool, testName string)
 		}
 	}
 }
+
+func BenchmarkAutomorphicMath(b *testing.B) {
+	runs := b.N / len(cases)
+	for i := 0; i < runs; i++ {
+		for _, c := range cases {
+			automorphicMath(c.x)
+		}
+	}
+}
+
+func BenchmarkAutomorphicStrings(b *testing.B) {
+	runs := b.N / len(cases)
+	for i := 0; i < runs; i++ {
+		for _, c := range cases {
+			automorphicStrings(c.x)
+		}
+	}
+}
