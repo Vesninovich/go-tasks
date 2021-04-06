@@ -12,15 +12,20 @@ type wordCount struct {
 	count int
 }
 
+type wordMapRecord struct {
+	count int
+	order int
+}
+
+type wordMap map[string]wordMapRecord
+
 type wordCountList []wordCount
 
 func Count(source string) string {
 	countsMap := buildWordMap(source)
 	counts := make(wordCountList, len(countsMap))
-	i := 0
-	for word, count := range countsMap {
-		counts[i] = wordCount{word, count}
-		i++
+	for word, r := range countsMap {
+		counts[r.order] = wordCount{word, r.count}
 	}
 	sort.Stable(counts)
 	var res strings.Builder
@@ -30,30 +35,34 @@ func Count(source string) string {
 	return res.String()[:res.Len()-1]
 }
 
-func buildWordMap(source string) map[string]int {
-	countsMap := make(map[string]int)
+func buildWordMap(source string) wordMap {
+	countsMap := make(wordMap)
 	var (
 		inWord    bool
 		wordStart int
+		wordChar  bool
+		word      string
+		order     int
+		record    wordMapRecord
+		exists    bool
 	)
-	for i, c := range source {
-		wordStart, inWord = checkWord(source, countsMap, wordStart, i, c, inWord)
+	for i, c := range source + " " {
+		wordChar = unicode.In(c, unicode.Letter, unicode.Digit)
+		if !wordChar && inWord {
+			word = source[wordStart:i]
+			record, exists = countsMap[word]
+			if exists {
+				countsMap[word] = wordMapRecord{record.count + 1, record.order}
+			} else {
+				countsMap[word] = wordMapRecord{1, order}
+				order++
+			}
+			inWord = false
+		} else if wordChar && !inWord {
+			wordStart, inWord = i, true
+		}
 	}
-	checkWord(source, countsMap, wordStart, len(source), ' ', inWord)
 	return countsMap
-}
-
-func checkWord(source string, counts map[string]int, start, i int, c rune, inWord bool) (int, bool) {
-	wordChar := unicode.In(c, unicode.Letter, unicode.Digit)
-	if !wordChar && inWord {
-		word := source[start:i]
-		counts[word] += 1
-		return start, false
-	}
-	if wordChar && !inWord {
-		return i, true
-	}
-	return start, inWord
 }
 
 func (list wordCountList) Len() int {
