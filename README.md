@@ -6,4 +6,4 @@
 
 [Задание 3 (подсчёт слов)](wordcount) [PR #3](https://github.com/Vesninovich/go-tasks/pull/3) [PR #5](https://github.com/Vesninovich/go-tasks/pull/5)
 
-[Задание 4 (Шифр Цезаря)](caesar) [PR #4](https://github.com/Vesninovich/go-tasks/pull/4)
+[Задание 4 (Шифр Цезаря)](caesar) [PR #4](https://github.com/Vesninovich/go-tasks/pull/4) [PR #6](https://github.com/Vesninovich/go-tasks/pull/6)
