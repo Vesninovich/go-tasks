@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"net/http"
+	"regexp"
 
 	"github.com/Vesninovich/go-tasks/todos/task"
 )
@@ -25,6 +26,33 @@ func handleTaskEndpoints(serveMux *http.ServeMux, taskServer task.TasksServer, b
 			taskServer.GetTasks(w, r)
 		case http.MethodPost:
 			taskServer.PostTask(w, r)
+		default:
+			writeNotFound(w)
 		}
 	})
+
+	validPath := regexp.MustCompile(baseURL + "/\\d+$")
+	serveMux.HandleFunc(baseURL+"/", func(w http.ResponseWriter, r *http.Request) {
+		m := validPath.FindStringSubmatch(r.URL.Path)
+		if m == nil {
+			writeNotFound(w)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			taskServer.GetOneTask(w, r)
+		case http.MethodPut:
+			taskServer.PutTask(w, r)
+		case http.MethodDelete:
+			taskServer.DeleteTask(w, r)
+		default:
+			writeNotFound(w)
+		}
+	})
+}
+
+// I do not like the message written by http.NotFound() method
+func writeNotFound(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("Not Found"))
 }

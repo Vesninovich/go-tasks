@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/Vesninovich/go-tasks/todos/common"
 	"github.com/Vesninovich/go-tasks/todos/task"
@@ -30,6 +32,32 @@ func (s *HTTPServer) GetTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res, err := json.Marshal(prepareTasks(tasks))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(res)
+}
+
+// GetOneTask serves requests to get task by id
+func (s *HTTPServer) GetOneTask(w http.ResponseWriter, r *http.Request) {
+	id, err := getIDFromURL(r.URL.Path)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	tsk, err := s.service.GetOne(context.Background(), id)
+	if err != nil {
+		switch err.(type) {
+		case *common.NotFoundError:
+			writeError(w, http.StatusNotFound, err)
+		default:
+			writeError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+	res, err := json.Marshal(taskToAPIModel(tsk))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -66,10 +94,68 @@ func (s *HTTPServer) PostTask(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprint(task.ID)))
 }
 
+// PutTask serves requests to update existing task
+func (s *HTTPServer) PutTask(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	var data updateTaskAPIModel
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	id, err := getIDFromURL(r.URL.Path)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	_, err = s.service.UpdateTask(context.Background(), id, data.Name, data.Description, int64(data.DueDate), data.Status)
+	if err != nil {
+		switch err.(type) {
+		case *common.InvalidInputError:
+			writeError(w, http.StatusBadRequest, err)
+		case *common.NotFoundError:
+			writeError(w, http.StatusNotFound, err)
+		default:
+			writeError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+// DeleteTask serves requests to get task by id
+func (s *HTTPServer) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	id, err := getIDFromURL(r.URL.Path)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	err = s.service.Delete(context.Background(), id)
+	if err != nil {
+		switch err.(type) {
+		case *common.NotFoundError:
+			writeError(w, http.StatusNotFound, err)
+		default:
+			writeError(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func writeError(w http.ResponseWriter, status int, err error) {
 	w.Header().Add("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(err.Error()))
+}
+
+func getIDFromURL(url string) (uint64, error) {
+	parts := strings.Split(url, "/")
+	return strconv.ParseUint(parts[len(parts)-1], 10, 64)
 }
 
 type taskAPIModel struct {
@@ -86,6 +172,12 @@ type createTaskAPIModel struct {
 	DueDate     int
 }
 
+type updateTaskAPIModel struct {
+	createTaskAPIModel
+	ID     uint64
+	Status string
+}
+
 func prepareTasks(tasks []task.Task) []taskAPIModel {
 	t := make([]taskAPIModel, len(tasks))
 	for i, task := range tasks {
@@ -100,23 +192,6 @@ func taskToAPIModel(t task.Task) taskAPIModel {
 		t.Name,
 		t.Description,
 		t.DueDate.Unix(),
-		getStatusText(t.Status),
-	}
-}
-
-func getStatusText(s task.Status) string {
-	switch s {
-	case task.New:
-		return "new"
-	case task.InProgress:
-		return "in-progress"
-	case task.Cancelled:
-		return "cancelled"
-	case task.Done:
-		return "done"
-	case task.Overdue:
-		return "overdue"
-	default:
-		return ""
+		t.Status.String(),
 	}
 }

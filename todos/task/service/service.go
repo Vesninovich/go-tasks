@@ -18,9 +18,14 @@ func New(r task.Repository) *Service {
 	return &Service{r}
 }
 
-// GetAll reads all saved tasks
+// GetAll reads all stored tasks
 func (s *Service) GetAll(ctx context.Context) ([]task.Task, error) {
 	return s.repository.ReadAll(ctx)
+}
+
+// GetOne reads stored task by id
+func (s *Service) GetOne(ctx context.Context, id uint64) (task.Task, error) {
+	return s.repository.ReadOne(ctx, id)
 }
 
 // CreateTask validates data, creates task if data is valid and saves it, returns error otherwise.
@@ -35,4 +40,26 @@ func (s *Service) CreateTask(ctx context.Context, name, desc string, dueDate int
 	}
 	due := time.Unix(dueDate, 0)
 	return s.repository.Create(ctx, task.DTO{Name: name, Description: desc, DueDate: due, Status: task.New})
+}
+
+// UpdateTask validates data, updates task if data is valid and task is found, returns error otherwise.
+func (s *Service) UpdateTask(ctx context.Context, id uint64, name, desc string, dueDate int64, status string) (task.Task, error) {
+	var empty task.Task
+	if name == "" {
+		return empty, &common.InvalidInputError{Reason: "name is required"}
+	}
+	if dueDate < 0 {
+		return empty, &common.InvalidInputError{Reason: "\"dueDate\" must be non-negative integer"}
+	}
+	st, err := task.StatusFromText(status)
+	if err != nil {
+		return empty, err
+	}
+	due := time.Unix(dueDate, 0)
+	return s.repository.Update(ctx, id, task.DTO{Name: name, Description: desc, DueDate: due, Status: st})
+}
+
+// Delete deletes stored task by id
+func (s *Service) Delete(ctx context.Context, id uint64) error {
+	return s.repository.Delete(ctx, id)
 }
