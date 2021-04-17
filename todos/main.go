@@ -13,7 +13,9 @@ func main() {
 	taskRepo := inmemory.New()
 	taskService := taskservice.New(taskRepo)
 	taskServer := taskhttp.New(taskService)
-	_, err := httpserver.StartServer("localhost:3000", "/api/v1", taskServer)
+	host := "0.0.0.0:3000"
+	log.Printf("Starting server at host %s\n", host)
+	_, err := httpserver.StartServer(host, "/api/v1", taskServer)
 	if err != nil {
 		log.Fatalf("Failed to start tasks server: %s", err.Error())
 	}
