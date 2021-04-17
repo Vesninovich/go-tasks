@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Compress compresses given text by described algorithm
 func Compress(source string) string {
 	var (
 		start      int
@@ -23,6 +24,7 @@ func Compress(source string) string {
 	return compressed.String()
 }
 
+// Decompress decompresses given text by described algorithm
 func Decompress(compressed string) string {
 	var (
 		skip         int
