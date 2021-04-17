@@ -1,23 +1,28 @@
 package http_server
 
 import (
-	"io"
 	"net/http"
+
+	"github.com/Vesninovich/go-tasks/todos/task"
 )
 
-func readAll(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, "[]")
-}
-
-func StartServer(host, baseUrl string) (*http.Server, error) {
-	// http.HandleFunc("/", readAll)
+func StartServer(host, baseUrl string, taskServer task.TasksServer) (*http.Server, error) {
 	serveMux := http.NewServeMux()
-	serveMux.HandleFunc(baseUrl, readAll)
-	// server := &http.Server{}
+	handleTaskEndpoints(serveMux, taskServer, baseUrl+"/task")
 	var server http.Server
 	server.Handler = serveMux
 	server.Addr = host
 	err := server.ListenAndServe()
 	return &server, err
+}
+
+func handleTaskEndpoints(serveMux *http.ServeMux, taskServer task.TasksServer, baseUrl string) {
+	serveMux.HandleFunc(baseUrl, func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			taskServer.GetTasks(w, r)
+		case http.MethodPost:
+			taskServer.PostTask(w, r)
+		}
+	})
 }
