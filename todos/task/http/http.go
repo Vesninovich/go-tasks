@@ -1,4 +1,4 @@
-package task_http
+package taskhttp
 
 import (
 	"context"
@@ -12,15 +12,18 @@ import (
 	task_service "github.com/Vesninovich/go-tasks/todos/task/service"
 )
 
-type HttpServer struct {
+// HTTPServer serves requests for Tasks
+type HTTPServer struct {
 	service *task_service.Service
 }
 
-func New(service *task_service.Service) *HttpServer {
-	return &HttpServer{service}
+// New creates new instance of HTTPServer
+func New(service *task_service.Service) *HTTPServer {
+	return &HTTPServer{service}
 }
 
-func (s *HttpServer) GetTasks(w http.ResponseWriter, r *http.Request) {
+// GetTasks serves requests to read all tasks
+func (s *HTTPServer) GetTasks(w http.ResponseWriter, r *http.Request) {
 	tasks, err := s.service.GetAll(context.Background())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
@@ -35,13 +38,14 @@ func (s *HttpServer) GetTasks(w http.ResponseWriter, r *http.Request) {
 	w.Write(res)
 }
 
-func (s *HttpServer) PostTask(w http.ResponseWriter, r *http.Request) {
+// PostTask serves requests to create new task
+func (s *HTTPServer) PostTask(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	var data createTaskApiModel
+	var data createTaskAPIModel
 	err = json.Unmarshal(body, &data)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
@@ -68,7 +72,7 @@ func writeError(w http.ResponseWriter, status int, err error) {
 	w.Write([]byte(err.Error()))
 }
 
-type taskApiModel struct {
+type taskAPIModel struct {
 	ID          uint64 `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
@@ -76,22 +80,22 @@ type taskApiModel struct {
 	Status      string `json:"status,omitempty"`
 }
 
-type createTaskApiModel struct {
+type createTaskAPIModel struct {
 	Name        string
 	Description string
 	DueDate     int
 }
 
-func prepareTasks(tasks []task.Task) []taskApiModel {
-	t := make([]taskApiModel, len(tasks))
+func prepareTasks(tasks []task.Task) []taskAPIModel {
+	t := make([]taskAPIModel, len(tasks))
 	for i, task := range tasks {
-		t[i] = taskToApiModel(task)
+		t[i] = taskToAPIModel(task)
 	}
 	return t
 }
 
-func taskToApiModel(t task.Task) taskApiModel {
-	return taskApiModel{
+func taskToAPIModel(t task.Task) taskAPIModel {
+	return taskAPIModel{
 		t.ID,
 		t.Name,
 		t.Description,

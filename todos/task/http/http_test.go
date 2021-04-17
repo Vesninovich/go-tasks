@@ -1,4 +1,4 @@
-package task_http
+package taskhttp
 
 import (
 	"io/ioutil"
@@ -60,7 +60,7 @@ func TestPostInvalid(t *testing.T) {
 	}
 }
 
-func getTasks(t *testing.T, s *HttpServer) (status int, contentType, body string) {
+func getTasks(t *testing.T, s *HTTPServer) (status int, contentType, body string) {
 	req := httptest.NewRequest("GET", "/", nil)
 	rec := httptest.NewRecorder()
 
@@ -72,7 +72,7 @@ func getTasks(t *testing.T, s *HttpServer) (status int, contentType, body string
 	return rec.Result().StatusCode, rec.Result().Header.Get("Content-Type"), string(bodyRaw)
 }
 
-func postTask(t *testing.T, s *HttpServer, task string) (status int, contentType, body string) {
+func postTask(t *testing.T, s *HTTPServer, task string) (status int, contentType, body string) {
 	req := httptest.NewRequest("POST", "/", strings.NewReader(task))
 	rec := httptest.NewRecorder()
 
@@ -96,6 +96,6 @@ func checkStatus(t *testing.T, expected, actual int) {
 	}
 }
 
-func createServer() *HttpServer {
+func createServer() *HTTPServer {
 	return New(task_service.New(inmemory.New()))
 }

@@ -1,5 +1,6 @@
 package common
 
+// InvalidInputError represents error on invalid input from user
 type InvalidInputError struct {
 	Reason string
 }
