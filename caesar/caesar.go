@@ -9,10 +9,14 @@ type empty struct{}
 
 const latLetterAmount = 'Z' - 'A' + 1
 
+// Cipher shifts all latin characters right by `key`,
+// as described by Caesar Cipher algorithm
 func Cipher(key int, source string) string {
 	return strings.Map(rotCharBy(normalizeKey(key)), source)
 }
 
+// Decipher tries to guess cipher key from given deciphered words of ciphered text
+// and then decipher it by ciphering text by guessed key.
 func Decipher(leaked []string, ciphered string) (string, error) {
 	leakedWords := getLeakedWords(leaked)
 	key, err := getCipherKey(leakedWords, ciphered)
@@ -39,7 +43,7 @@ func getCipherKey(leaked map[string]empty, ciphered string) (key int, err error)
 		found     bool
 	)
 	for i, c := range ciphered + " " {
-		wordChar = isAsciiAlpha(c)
+		wordChar = isASCIIAlpha(c)
 		if !wordChar && inWord {
 			word = ciphered[wordStart:i]
 			key, found = keyFromWord(leaked, word)
@@ -68,7 +72,7 @@ func keyFromWord(leaked map[string]empty, word string) (key int, found bool) {
 
 func rotCharBy(n int) func(rune) rune {
 	return func(r rune) rune {
-		if !isAsciiLetter(r) {
+		if !isASCIILetter(r) {
 			return r
 		}
 		res := r + rune(n)
@@ -79,12 +83,12 @@ func rotCharBy(n int) func(rune) rune {
 	}
 }
 
-func isAsciiLetter(r rune) bool {
+func isASCIILetter(r rune) bool {
 	return r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z'
 }
 
-func isAsciiAlpha(r rune) bool {
-	return isAsciiLetter(r) || r >= '0' && r <= '9'
+func isASCIIAlpha(r rune) bool {
+	return isASCIILetter(r) || r >= '0' && r <= '9'
 }
 
 func normalizeKey(key int) int {

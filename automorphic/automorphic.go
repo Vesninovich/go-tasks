@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// Two different implementations, because why not
+// Automorphic checks whether given natural number is, well, automorphic.
 func Automorphic(n uint64) bool {
 	return automorphicMath(n)
 }

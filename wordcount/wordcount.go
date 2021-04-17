@@ -21,6 +21,8 @@ type wordMap map[string]wordMapRecord
 
 type wordCountList []wordCount
 
+// Count builds string of words and number of times they appear in text,
+// preserving order in which they appear.
 func Count(source string) string {
 	countsMap := buildWordMap(source)
 	counts := make(wordCountList, len(countsMap))
