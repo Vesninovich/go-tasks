@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -24,9 +25,14 @@ func New(service *task_service.Service) *HTTPServer {
 	return &HTTPServer{service}
 }
 
-// GetTasks serves requests to read all tasks
+// GetTasks serves requests to read slice of tasks
 func (s *HTTPServer) GetTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := s.service.GetAll(context.Background())
+	from, count, err := parsePaginationQuery(r.URL.Query())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	tasks, err := s.service.Get(context.Background(), uint(from), uint(count))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -156,6 +162,28 @@ func writeError(w http.ResponseWriter, status int, err error) {
 func getIDFromURL(url string) (uint64, error) {
 	parts := strings.Split(url, "/")
 	return strconv.ParseUint(parts[len(parts)-1], 10, 64)
+}
+
+func parsePaginationQuery(query url.Values) (from uint64, count uint64, err error) {
+	f := query.Get("from")
+	c := query.Get("count")
+	if f == "" {
+		from = 0
+	} else {
+		from, err = strconv.ParseUint(f, 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	if c == "" {
+		count = 0
+	} else {
+		count, err = strconv.ParseUint(c, 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	return
 }
 
 type taskAPIModel struct {

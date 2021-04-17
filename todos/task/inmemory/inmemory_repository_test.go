@@ -34,7 +34,7 @@ func TestCreate(t *testing.T) {
 	if err != nil {
 		t.Errorf("Got error while saving task 1: %s", err)
 	}
-	saved, err := r.ReadAll(context.Background())
+	saved, err := r.Read(context.Background(), 0, 0)
 	switch {
 	case err != nil:
 		t.Errorf("Got error while reading tasks: %s", err)

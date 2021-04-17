@@ -23,12 +23,24 @@ func New() *Repository {
 	}
 }
 
-// ReadAll reads all saved tasks
-func (r *Repository) ReadAll(ctx context.Context) ([]task.Task, error) {
+// Read reads `count` saved tasks starting from `from`
+func (r *Repository) Read(ctx context.Context, from, count uint) ([]task.Task, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	return r.tasks, nil
+	if from > uint(len(r.tasks)-1) {
+		return nil, &common.OutOfRangeError{I: int(from)}
+	}
+
+	if count == 0 {
+		return r.tasks[from:], nil
+	}
+
+	to := int(from + count)
+	if to > len(r.tasks) {
+		return nil, &common.OutOfRangeError{I: to}
+	}
+	return r.tasks[from:to], nil
 }
 
 // ReadOne searches for task with given id, returns error if it is not found

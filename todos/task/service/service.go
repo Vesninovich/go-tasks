@@ -18,9 +18,9 @@ func New(r task.Repository) *Service {
 	return &Service{r}
 }
 
-// GetAll reads all stored tasks
-func (s *Service) GetAll(ctx context.Context) ([]task.Task, error) {
-	return s.repository.ReadAll(ctx)
+// Get reads all stored tasks
+func (s *Service) Get(ctx context.Context, from, count uint) ([]task.Task, error) {
+	return s.repository.Read(ctx, from, count)
 }
 
 // GetOne reads stored task by id

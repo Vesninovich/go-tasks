@@ -1,5 +1,7 @@
 package common
 
+import "strconv"
+
 // InvalidInputError represents error on invalid input from user
 type InvalidInputError struct {
 	Reason string
@@ -16,4 +18,12 @@ type NotFoundError struct {
 
 func (e *NotFoundError) Error() string {
 	return e.What + " not found"
+}
+
+type OutOfRangeError struct {
+	I int
+}
+
+func (e *OutOfRangeError) Error() string {
+	return "Index out of range: " + strconv.Itoa(e.I)
 }

@@ -15,7 +15,7 @@ type DTO struct {
 
 // Repository interface represents objects that handle CRUD operations with storage
 type Repository interface {
-	ReadAll(ctx context.Context) ([]Task, error)
+	Read(ctx context.Context, from, count uint) ([]Task, error)
 	ReadOne(ctx context.Context, id uint64) (Task, error)
 	Create(ctx context.Context, task DTO) (Task, error)
 	Update(ctx context.Context, id uint64, task DTO) (Task, error)
