@@ -12,6 +12,13 @@ services:
     command: go run main.go
     depends_on: 
       - db
+    environment: 
+      TODO_DB: gotodos
+      TODO_DB_HOST: db
+      TODO_DB_PORT: 5432
+      TODO_DB_USER: gotodos
+      TODO_DB_PWD: gotodos
+      TODO_HOST: 0.0.0.0:3000
   db:
     container_name: todos-db
     image: postgres:13.2
