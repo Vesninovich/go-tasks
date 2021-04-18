@@ -155,7 +155,7 @@ func (s *HTTPServer) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 func writeError(w http.ResponseWriter, status int, err error) {
 	w.Header().Add("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(status)
 	w.Write([]byte(err.Error()))
 }
 
