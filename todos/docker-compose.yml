@@ -10,3 +10,15 @@ services:
       - ./:/todos
     working_dir: /todos
     command: go run main.go
+    depends_on: 
+      - db
+  db:
+    container_name: todos-db
+    image: postgres:13.2
+    # ports: 5432:5432
+    environment: 
+      POSTGRES_USER: gotodos
+      POSTGRES_PASSWORD: gotodos
+      POSTGRES_DB: gotodos
+    volumes: 
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
