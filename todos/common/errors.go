@@ -20,6 +20,7 @@ func (e *NotFoundError) Error() string {
 	return e.What + " not found"
 }
 
+// OutOfRangeError represents index out of range error
 type OutOfRangeError struct {
 	I int
 }

@@ -9,14 +9,17 @@ import (
 	"github.com/Vesninovich/go-tasks/todos/task"
 )
 
+// SQLRepository provides access to relational DB storage of tasks
 type SQLRepository struct {
 	db *sql.DB
 }
 
+// New creates a new instance of SQLRepository
 func New(db *sql.DB) *SQLRepository {
 	return &SQLRepository{db}
 }
 
+// Read reads `count` saved tasks starting from `from`
 func (r *SQLRepository) Read(ctx context.Context, from, count uint) ([]task.Task, error) {
 	rows, err := r.db.QueryContext(ctx, "SELECT * FROM tasks;")
 	if err != nil {
@@ -34,6 +37,7 @@ func (r *SQLRepository) Read(ctx context.Context, from, count uint) ([]task.Task
 	return tasks, nil
 }
 
+// ReadOne searches for task with given id, returns error if it is not found
 func (r *SQLRepository) ReadOne(ctx context.Context, id uint64) (task.Task, error) {
 	var t task.Task
 	err := r.db.QueryRowContext(
@@ -45,6 +49,7 @@ func (r *SQLRepository) ReadOne(ctx context.Context, id uint64) (task.Task, erro
 	return t, err
 }
 
+// Create adds new task to saved
 func (r *SQLRepository) Create(ctx context.Context, dto task.DTO) (task.Task, error) {
 	var t task.Task
 	err := r.db.QueryRowContext(
@@ -57,6 +62,7 @@ func (r *SQLRepository) Create(ctx context.Context, dto task.DTO) (task.Task, er
 	return t, err
 }
 
+// Update updates task with given id, returns error if it is not found
 func (r *SQLRepository) Update(ctx context.Context, id uint64, dto task.DTO) (task.Task, error) {
 	var t task.Task
 	err := r.db.QueryRowContext(
@@ -73,6 +79,7 @@ func (r *SQLRepository) Update(ctx context.Context, id uint64, dto task.DTO) (ta
 	return t, err
 }
 
+// Delete deletes task with given id, returns error if it is not found
 func (r *SQLRepository) Delete(ctx context.Context, id uint64) error {
 	res, err := r.db.ExecContext(ctx, "DELETE FROM tasks WHERE id=$1;", id)
 	if err != nil {
