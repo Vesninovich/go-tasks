@@ -3,6 +3,7 @@ package tasksql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 
 	"github.com/Vesninovich/go-tasks/todos/common"
@@ -21,7 +22,8 @@ func New(db *sql.DB) *SQLRepository {
 
 // Read reads `count` saved tasks starting from `from`
 func (r *SQLRepository) Read(ctx context.Context, from, count uint) ([]task.Task, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT * FROM tasks;")
+	stmt := makeReadStatement(from, count)
+	rows, err := r.db.QueryContext(ctx, stmt)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +92,13 @@ func (r *SQLRepository) Delete(ctx context.Context, id uint64) error {
 		return notFoundError(id)
 	}
 	return err
+}
+
+func makeReadStatement(from, count uint) string {
+	if count == 0 {
+		return fmt.Sprintf("SELECT * FROM tasks OFFSET %d;", from)
+	}
+	return fmt.Sprintf("SELECT * FROM tasks OFFSET %d LIMIT %d;", from, count)
 }
 
 func notFoundError(id uint64) *common.NotFoundError {
