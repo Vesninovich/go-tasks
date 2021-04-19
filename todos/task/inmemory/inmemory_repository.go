@@ -29,7 +29,7 @@ func (r *Repository) Read(ctx context.Context, from, count uint) ([]task.Task, e
 	defer r.lock.RUnlock()
 
 	if from > uint(len(r.tasks)-1) {
-		return nil, &common.OutOfRangeError{I: int(from)}
+		return make([]task.Task, 0), nil
 	}
 
 	if count == 0 {
@@ -38,7 +38,7 @@ func (r *Repository) Read(ctx context.Context, from, count uint) ([]task.Task, e
 
 	to := int(from + count)
 	if to > len(r.tasks) {
-		return nil, &common.OutOfRangeError{I: to}
+		to = len(r.tasks)
 	}
 	return r.tasks[from:to], nil
 }
@@ -94,7 +94,7 @@ func (r *Repository) Update(ctx context.Context, id uint64, taskDTO task.DTO) (t
 		}
 	}
 	var empty task.Task
-	return empty, &common.NotFoundError{What: "Task with ID " + strconv.FormatUint(id, 10)}
+	return empty, notFoundError(id)
 }
 
 // Delete deletes task with given id, returns error if it is not found
@@ -108,5 +108,9 @@ func (r *Repository) Delete(ctx context.Context, id uint64) error {
 			return nil
 		}
 	}
+	return notFoundError(id)
+}
+
+func notFoundError(id uint64) *common.NotFoundError {
 	return &common.NotFoundError{What: "Task with ID " + strconv.FormatUint(id, 10)}
 }
