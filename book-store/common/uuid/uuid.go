@@ -39,6 +39,7 @@ func (uuid UUID) String() string {
 
 var zero UUID
 
+// IsZero checks if UUID is zero value
 func (uuid UUID) IsZero() bool {
 	return uuid == zero
 }
