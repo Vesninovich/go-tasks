@@ -36,3 +36,9 @@ func (uuid UUID) String() string {
 	res[23] = '-'
 	return string(res[:])
 }
+
+var zero UUID
+
+func (uuid UUID) IsZero() bool {
+	return uuid == zero
+}
