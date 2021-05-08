@@ -72,10 +72,10 @@ func (r *Repository) Update(ctx context.Context, dto author.DTO) (book.Author, e
 	defer r.lock.Unlock()
 
 	for i, item := range r.data {
-		if !item.DeletedAt.IsZero() {
-			return book.Author{}, &commonerrors.NotFound{What: fmt.Sprintf("Author with ID %s", dto.ID)}
-		}
 		if item.ID == dto.ID {
+			if !item.DeletedAt.IsZero() {
+				return book.Author{}, &commonerrors.NotFound{What: fmt.Sprintf("Author with ID %s", dto.ID)}
+			}
 			r.data[i] = book.Author{
 				ID:        dto.ID,
 				Name:      dto.Name,

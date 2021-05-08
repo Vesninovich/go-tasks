@@ -65,7 +65,8 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	repo, id := setupMutation(t)
+	repo, stored := setupMutation(t)
+	id := stored[0].ID
 	name := "И.С. Тургенев"
 	replaced, err := repo.Update(ctx, author.DTO{
 		ID:   id,
@@ -92,7 +93,7 @@ func TestUpdateNonExisting(t *testing.T) {
 }
 
 func TestUpdateDeleted(t *testing.T) {
-	repo, id := setupAlreadyDeleted(t)
+	repo, id, _ := setupAlreadyDeleted(t)
 	_, err := repo.Update(ctx, author.DTO{
 		ID:   id,
 		Name: "",
@@ -100,19 +101,45 @@ func TestUpdateDeleted(t *testing.T) {
 	checkNotFound(t, err)
 }
 
-func TestDelete(t *testing.T) {
-	repo, id := setupMutation(t)
-	deleted, err := repo.Delete(ctx, id)
-	if err != nil {
-		t.Errorf("Error while deleting item: %s", err)
+func TestUpdateWithSomeDeleted(t *testing.T) {
+	repo, id, stored := setupAlreadyDeleted(t)
+	var item book.Author
+	for _, item = range stored {
+		if item.ID != id {
+			break
+		}
 	}
-	if deleted.DeletedAt.IsZero() {
-		t.Errorf("Expected to set DeletedAt")
+	name := "Hemingway"
+	replaced, err := repo.Update(ctx, author.DTO{
+		ID:   item.ID,
+		Name: name,
+	})
+	if err != nil {
+		t.Errorf("Error while updating item with some deleted: %s", err)
+	}
+	if replaced.UpdatedAt.IsZero() {
+		t.Errorf("Expected to set UpdatedAt of item %s", replaced.Name)
+	}
+	if replaced.Name != name {
+		t.Errorf("Expected to update item with data %s, got %s", name, replaced.Name)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	repo, stored := setupMutation(t)
+	for _, item := range stored {
+		deleted, err := repo.Delete(ctx, item.ID)
+		if err != nil {
+			t.Errorf("Error while deleting item: %s", err)
+		}
+		if deleted.DeletedAt.IsZero() {
+			t.Errorf("Expected to set DeletedAt")
+		}
 	}
 }
 
 func TestDeleteTwice(t *testing.T) {
-	repo, id := setupAlreadyDeleted(t)
+	repo, id, _ := setupAlreadyDeleted(t)
 	_, err := repo.Delete(ctx, id)
 	checkNotFound(t, err)
 }
@@ -144,23 +171,23 @@ func setup(t *testing.T) author.Repository {
 	return repo
 }
 
-func setupMutation(t *testing.T) (author.Repository, uuid.UUID) {
+func setupMutation(t *testing.T) (author.Repository, []book.Author) {
 	repo := setup(t)
 	stored, err := repo.GetAll(ctx)
 	if err != nil {
 		t.Errorf("Error while fetching all data: %s", err)
 	}
-	toMutate := findByName(authors[0], stored, t)
-	return repo, toMutate.ID
+	return repo, stored
 }
 
-func setupAlreadyDeleted(t *testing.T) (author.Repository, uuid.UUID) {
-	repo, id := setupMutation(t)
+func setupAlreadyDeleted(t *testing.T) (author.Repository, uuid.UUID, []book.Author) {
+	repo, stored := setupMutation(t)
+	id := stored[0].ID
 	_, err := repo.Delete(ctx, id)
 	if err != nil {
 		t.Errorf("Error deleting item: %s", err)
 	}
-	return repo, id
+	return repo, id, stored
 }
 
 func checkNotFound(t *testing.T, err error) {
