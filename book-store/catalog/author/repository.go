@@ -7,8 +7,13 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
-// DTO of Author
-type DTO struct {
+// CreateDTO is DTO for creating Author
+type CreateDTO struct {
+	Name string
+}
+
+// UpdateDTO is DTO for updating Author
+type UpdateDTO struct {
 	ID   uuid.UUID
 	Name string
 }
@@ -17,7 +22,7 @@ type DTO struct {
 type Repository interface {
 	GetAll(ctx context.Context) ([]book.Author, error)
 	Get(ctx context.Context, id uuid.UUID) (book.Author, error)
-	Create(ctx context.Context, name string) (book.Author, error)
-	Update(ctx context.Context, dto DTO) (book.Author, error)
+	Create(ctx context.Context, dto CreateDTO) (book.Author, error)
+	Update(ctx context.Context, dto UpdateDTO) (book.Author, error)
 	Delete(ctx context.Context, id uuid.UUID) (book.Author, error)
 }

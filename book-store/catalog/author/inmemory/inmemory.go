@@ -51,13 +51,13 @@ func (r *Repository) Get(ctx context.Context, id uuid.UUID) (book.Author, error)
 }
 
 // Create creates item in in-memory repository
-func (r *Repository) Create(ctx context.Context, name string) (book.Author, error) {
+func (r *Repository) Create(ctx context.Context, dto author.CreateDTO) (book.Author, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	item := book.Author{
 		ID:        uuid.New(),
-		Name:      name,
+		Name:      dto.Name,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Time{},
 		DeletedAt: time.Time{},
@@ -67,7 +67,7 @@ func (r *Repository) Create(ctx context.Context, name string) (book.Author, erro
 }
 
 // Update updates item in in-memory repository
-func (r *Repository) Update(ctx context.Context, dto author.DTO) (book.Author, error) {
+func (r *Repository) Update(ctx context.Context, dto author.UpdateDTO) (book.Author, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
