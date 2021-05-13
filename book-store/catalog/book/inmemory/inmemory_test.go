@@ -68,18 +68,7 @@ func TestGetNonExisting(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	repo := setup(t)
-	stored, _ := repo.GetAll(ctx)
-	for _, item := range stored {
-		if item.CreatedAt.IsZero() {
-			t.Error("Expected to set CreatedAt")
-		}
-		if !item.UpdatedAt.IsZero() {
-			t.Error("Did not expect to set UpdatedAt")
-		}
-		if !item.DeletedAt.IsZero() {
-			t.Error("Did not expect to set DeletedAt")
-		}
-	}
+	repo.GetAll(ctx)
 }
 
 func TestUpdate(t *testing.T) {
@@ -96,9 +85,6 @@ func TestUpdate(t *testing.T) {
 	})
 	if err != nil {
 		t.Errorf("Error while updating item: %s", err)
-	}
-	if replaced.UpdatedAt.IsZero() {
-		t.Errorf("Expected to set UpdatedAt of item %s", replaced.Name)
 	}
 	if replaced.Name != name ||
 		replaced.Author.Name != aut.Name ||
@@ -149,9 +135,6 @@ func TestUpdateWithSomeDeleted(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error while updating item with some deleted: %s", err)
 	}
-	if replaced.UpdatedAt.IsZero() {
-		t.Errorf("Expected to set UpdatedAt of item %s", replaced.Name)
-	}
 	if replaced.Name != name ||
 		replaced.Author.Name != aut.Name ||
 		replaced.Categories[0].Name != cat[0].Name {
@@ -162,12 +145,9 @@ func TestUpdateWithSomeDeleted(t *testing.T) {
 func TestDelete(t *testing.T) {
 	repo, stored := setupMutation(t)
 	for _, item := range stored {
-		deleted, err := repo.Delete(ctx, item.ID)
+		_, err := repo.Delete(ctx, item.ID)
 		if err != nil {
 			t.Errorf("Error while deleting item: %s", err)
-		}
-		if deleted.DeletedAt.IsZero() {
-			t.Errorf("Expected to set DeletedAt")
 		}
 	}
 }

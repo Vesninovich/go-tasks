@@ -11,6 +11,7 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/catalog/category"
 	"github.com/Vesninovich/go-tasks/book-store/common/book"
 	"github.com/Vesninovich/go-tasks/book-store/common/commonerrors"
+	"github.com/Vesninovich/go-tasks/book-store/common/stored"
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
@@ -19,7 +20,7 @@ type Repository struct {
 	authorRepo   author.Repository
 	categoryRepo category.Repository
 
-	data []book.Book
+	data []bookrepo.StoredBook
 	lock sync.RWMutex
 }
 
@@ -28,7 +29,7 @@ func New(authorRepo author.Repository, categoryRepo category.Repository) *Reposi
 	return &Repository{
 		authorRepo:   authorRepo,
 		categoryRepo: categoryRepo,
-		data:         make([]book.Book, 0),
+		data:         make([]bookrepo.StoredBook, 0),
 	}
 }
 
@@ -37,7 +38,11 @@ func (r *Repository) GetAll(ctx context.Context) ([]book.Book, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	return r.data[:], nil
+	data := make([]book.Book, len(r.data))
+	for i, s := range r.data {
+		data[i] = s.ToBook()
+	}
+	return data, nil
 }
 
 // Get gets item by ID from in-memory repository
@@ -47,10 +52,10 @@ func (r *Repository) Get(ctx context.Context, id uuid.UUID) (book.Book, error) {
 
 	for _, item := range r.data {
 		if item.ID == id {
-			if !item.DeletedAt.IsZero() {
+			if item.IsDeleted() {
 				return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", id)}
 			}
-			return item, nil
+			return item.ToBook(), nil
 		}
 	}
 
@@ -67,17 +72,22 @@ func (r *Repository) Create(ctx context.Context, dto bookrepo.CreateDTO) (book.B
 		return book.Book{}, err
 	}
 
-	item := book.Book{
+	b := book.Book{
 		ID:         uuid.New(),
 		Name:       dto.Name,
 		Author:     author,
 		Categories: categories,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Time{},
-		DeletedAt:  time.Time{},
+	}
+	item := bookrepo.StoredBook{
+		Book: b,
+		Stored: stored.Stored{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Time{},
+			DeletedAt: time.Time{},
+		},
 	}
 	r.data = append(r.data, item)
-	return item, nil
+	return b, nil
 }
 
 // Update updates item in in-memory repository
@@ -87,23 +97,28 @@ func (r *Repository) Update(ctx context.Context, dto bookrepo.UpdateDTO) (book.B
 
 	for i, item := range r.data {
 		if item.ID == dto.ID {
-			if !item.DeletedAt.IsZero() {
+			if item.IsDeleted() {
 				return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", dto.ID)}
 			}
 			author, categories, err := r.storeChildren(ctx, dto.Author, dto.Categories)
 			if err != nil {
 				return book.Book{}, err
 			}
-			r.data[i] = book.Book{
+			b := book.Book{
 				ID:         dto.ID,
 				Name:       dto.Name,
 				Author:     author,
 				Categories: categories,
-				CreatedAt:  item.CreatedAt,
-				UpdatedAt:  time.Now(),
-				DeletedAt:  time.Time{},
 			}
-			return r.data[i], nil
+			r.data[i] = bookrepo.StoredBook{
+				Book: b,
+				Stored: stored.Stored{
+					CreatedAt: item.CreatedAt,
+					UpdatedAt: time.Now(),
+					DeletedAt: time.Time{},
+				},
+			}
+			return b, nil
 		}
 	}
 	return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", dto.ID)}
@@ -116,17 +131,24 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Book, error
 
 	for i, item := range r.data {
 		if item.ID == id {
-			if !item.DeletedAt.IsZero() {
+			if item.IsDeleted() {
 				return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", id)}
 			}
-			r.data[i] = book.Book{
-				ID:        id,
-				Name:      item.Name,
-				CreatedAt: item.CreatedAt,
-				UpdatedAt: item.UpdatedAt,
-				DeletedAt: time.Now(),
+			b := book.Book{
+				ID:         id,
+				Name:       item.Name,
+				Author:     item.Author,
+				Categories: item.Categories,
 			}
-			return r.data[i], nil
+			r.data[i] = bookrepo.StoredBook{
+				Book: b,
+				Stored: stored.Stored{
+					CreatedAt: item.CreatedAt,
+					UpdatedAt: item.UpdatedAt,
+					DeletedAt: time.Now(),
+				},
+			}
+			return b, nil
 		}
 	}
 	return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", id)}

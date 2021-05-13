@@ -1,8 +1,6 @@
 package book
 
 import (
-	"time"
-
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
@@ -12,7 +10,4 @@ type Book struct {
 	Name       string
 	Author     Author
 	Categories []Category
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	DeletedAt  time.Time
 }
