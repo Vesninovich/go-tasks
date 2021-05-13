@@ -18,14 +18,14 @@ import (
 var books = []bookrepo.CreateDTO{
 	{
 		Name:   "bookA",
-		Author: author.UpdateDTO{Name: "authorA"},
-		Categories: []category.UpdateDTO{
+		Author: book.Author{Name: "authorA"},
+		Categories: []book.Category{
 			{Name: "catA"},
 		},
 	},
 	{
 		Name: "bookB",
-		Categories: []category.UpdateDTO{
+		Categories: []book.Category{
 			{Name: "catA"},
 			{},
 		},
@@ -75,9 +75,9 @@ func TestUpdate(t *testing.T) {
 	repo, stored := setupMutation(t)
 	id := stored[0].ID
 	name := "asddsa"
-	aut := author.UpdateDTO{Name: "authorC"}
-	cat := []category.UpdateDTO{{Name: "catC"}}
-	replaced, err := repo.Update(ctx, bookrepo.UpdateDTO{
+	aut := book.Author{Name: "authorC"}
+	cat := []book.Category{{Name: "catC"}}
+	replaced, err := repo.Update(ctx, book.Book{
 		ID:         id,
 		Name:       name,
 		Author:     aut,
@@ -95,22 +95,22 @@ func TestUpdate(t *testing.T) {
 
 func TestUpdateNonExisting(t *testing.T) {
 	repo := setup(t)
-	_, err := repo.Update(ctx, bookrepo.UpdateDTO{
+	_, err := repo.Update(ctx, book.Book{
 		ID:         uuid.New(),
 		Name:       "",
-		Author:     author.UpdateDTO{},
-		Categories: []category.UpdateDTO{},
+		Author:     book.Author{},
+		Categories: []book.Category{},
 	})
 	checkNotFound(t, err)
 }
 
 func TestUpdateDeleted(t *testing.T) {
 	repo, id, _ := setupAlreadyDeleted(t)
-	_, err := repo.Update(ctx, bookrepo.UpdateDTO{
+	_, err := repo.Update(ctx, book.Book{
 		ID:         id,
 		Name:       "",
-		Author:     author.UpdateDTO{},
-		Categories: []category.UpdateDTO{},
+		Author:     book.Author{},
+		Categories: []book.Category{},
 	})
 	checkNotFound(t, err)
 }
@@ -124,9 +124,9 @@ func TestUpdateWithSomeDeleted(t *testing.T) {
 		}
 	}
 	name := "asddsa"
-	aut := author.UpdateDTO{Name: "authorC"}
-	cat := []category.UpdateDTO{{Name: "catC"}}
-	replaced, err := repo.Update(ctx, bookrepo.UpdateDTO{
+	aut := book.Author{Name: "authorC"}
+	cat := []book.Category{{Name: "catC"}}
+	replaced, err := repo.Update(ctx, book.Book{
 		ID:         item.ID,
 		Name:       name,
 		Author:     aut,
@@ -188,11 +188,11 @@ func setup(t *testing.T) bookrepo.Repository {
 	if err != nil {
 		t.Error("Error in setup: failed to create category")
 	}
-	books[1].Author = author.UpdateDTO{
+	books[1].Author = book.Author{
 		ID:   exAuthor.ID,
 		Name: exAuthor.Name,
 	}
-	books[1].Categories[1] = category.UpdateDTO{
+	books[1].Categories[1] = book.Category{
 		ID:   exCategory.ID,
 		Name: exCategory.Name,
 	}

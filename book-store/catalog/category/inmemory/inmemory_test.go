@@ -57,7 +57,7 @@ func TestUpdate(t *testing.T) {
 	repo, stored := setupMutation(t)
 	id := stored[0].ID
 	name := "asddsa"
-	replaced, err := repo.Update(ctx, category.UpdateDTO{
+	replaced, err := repo.Update(ctx, book.Category{
 		ID:   id,
 		Name: name,
 	})
@@ -71,7 +71,7 @@ func TestUpdate(t *testing.T) {
 
 func TestUpdateNonExisting(t *testing.T) {
 	repo := setup(t)
-	_, err := repo.Update(ctx, category.UpdateDTO{
+	_, err := repo.Update(ctx, book.Category{
 		ID:   uuid.New(),
 		Name: "",
 	})
@@ -80,7 +80,7 @@ func TestUpdateNonExisting(t *testing.T) {
 
 func TestUpdateDeleted(t *testing.T) {
 	repo, id, _ := setupAlreadyDeleted(t)
-	_, err := repo.Update(ctx, category.UpdateDTO{
+	_, err := repo.Update(ctx, book.Category{
 		ID:   id,
 		Name: "",
 	})
@@ -96,7 +96,7 @@ func TestUpdateWithSomeDeleted(t *testing.T) {
 		}
 	}
 	name := "asddsa"
-	replaced, err := repo.Update(ctx, category.UpdateDTO{
+	replaced, err := repo.Update(ctx, book.Category{
 		ID:   item.ID,
 		Name: name,
 	})

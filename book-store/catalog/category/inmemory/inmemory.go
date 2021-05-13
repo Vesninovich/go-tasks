@@ -78,7 +78,7 @@ func (r *Repository) Create(ctx context.Context, dto category.CreateDTO) (book.C
 }
 
 // Update updates item in in-memory repository
-func (r *Repository) Update(ctx context.Context, dto category.UpdateDTO) (book.Category, error) {
+func (r *Repository) Update(ctx context.Context, dto book.Category) (book.Category, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

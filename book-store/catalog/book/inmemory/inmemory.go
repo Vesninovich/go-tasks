@@ -91,7 +91,7 @@ func (r *Repository) Create(ctx context.Context, dto bookrepo.CreateDTO) (book.B
 }
 
 // Update updates item in in-memory repository
-func (r *Repository) Update(ctx context.Context, dto bookrepo.UpdateDTO) (book.Book, error) {
+func (r *Repository) Update(ctx context.Context, dto book.Book) (book.Book, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -156,8 +156,8 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Book, error
 
 func (r *Repository) storeChildren(
 	ctx context.Context,
-	authorDto author.UpdateDTO,
-	categoriesDto []category.UpdateDTO,
+	authorDto book.Author,
+	categoriesDto []book.Category,
 ) (author book.Author, categories []book.Category, err error) {
 	author, err = r.storeAuthor(ctx, authorDto)
 	if err != nil {
@@ -169,7 +169,7 @@ func (r *Repository) storeChildren(
 
 func (r *Repository) storeAuthor(
 	ctx context.Context,
-	dto author.UpdateDTO,
+	dto book.Author,
 ) (aut book.Author, err error) {
 	if dto.ID.IsZero() {
 		aut, err = r.authorRepo.Create(ctx, author.CreateDTO{Name: dto.Name})
@@ -181,7 +181,7 @@ func (r *Repository) storeAuthor(
 
 func (r *Repository) storeCategories(
 	ctx context.Context,
-	dtos []category.UpdateDTO,
+	dtos []book.Category,
 ) (categories []book.Category, err error) {
 	categories = make([]book.Category, len(dtos))
 	var cat book.Category
@@ -197,7 +197,7 @@ func (r *Repository) storeCategories(
 
 func (r *Repository) storeCategory(
 	ctx context.Context,
-	dto category.UpdateDTO,
+	dto book.Category,
 ) (cat book.Category, err error) {
 	if dto.ID.IsZero() {
 		cat, err = r.categoryRepo.Create(ctx, category.CreateDTO{
