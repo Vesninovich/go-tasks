@@ -6,9 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Vesninovich/go-tasks/book-store/catalog/author"
 	bookrepo "github.com/Vesninovich/go-tasks/book-store/catalog/book"
-	"github.com/Vesninovich/go-tasks/book-store/catalog/category"
 	"github.com/Vesninovich/go-tasks/book-store/common/book"
 	"github.com/Vesninovich/go-tasks/book-store/common/commonerrors"
 	"github.com/Vesninovich/go-tasks/book-store/common/stored"
@@ -17,49 +15,68 @@ import (
 
 // Repository represents in-memory repository of books
 type Repository struct {
-	authorRepo   author.Repository
-	categoryRepo category.Repository
-
 	data []bookrepo.StoredBook
 	lock sync.RWMutex
 }
 
 // New creates new in-memory repository of books
-func New(authorRepo author.Repository, categoryRepo category.Repository) *Repository {
+func New() *Repository {
 	return &Repository{
-		authorRepo:   authorRepo,
-		categoryRepo: categoryRepo,
-		data:         make([]bookrepo.StoredBook, 0),
+		data: make([]bookrepo.StoredBook, 0),
 	}
 }
 
-// GetAll gets all items from in-memory repository
-func (r *Repository) GetAll(ctx context.Context) ([]book.Book, error) {
+// Get fetches books
+func (r *Repository) Get(ctx context.Context, from, count uint, query book.Query) ([]book.Book, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	data := make([]book.Book, len(r.data))
-	for i, s := range r.data {
-		data[i] = s.ToBook()
-	}
-	return data, nil
-}
-
-// Get gets item by ID from in-memory repository
-func (r *Repository) Get(ctx context.Context, id uuid.UUID) (book.Book, error) {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-
+	res := make([]book.Book, 0, count)
 	for _, item := range r.data {
-		if item.ID == id {
-			if item.IsDeleted() {
-				return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", id)}
+		if item.IsDeleted() {
+			continue
+		}
+		if matchesQuery(query, item) {
+			if from > 0 {
+				from--
+				continue
 			}
-			return item.ToBook(), nil
+			res = append(res, book.Book{
+				ID:         item.ID,
+				Name:       item.Name,
+				Author:     item.Author,
+				Categories: item.Categories,
+			})
+			count--
+		}
+		if count == 0 {
+			break
 		}
 	}
 
-	return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", id)}
+	return res, nil
+}
+
+func matchesQuery(query book.Query, item bookrepo.StoredBook) bool {
+	if !query.Author.IsZero() && item.Author.ID != query.Author {
+		return false
+	}
+	if len(query.Categories) > len(item.Categories) {
+		return false
+	}
+	for _, id := range query.Categories {
+		found := false
+		for _, cat := range item.Categories {
+			found = cat.ID == id
+			if found {
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 // Create creates item in in-memory repository
@@ -67,16 +84,11 @@ func (r *Repository) Create(ctx context.Context, dto bookrepo.CreateDTO) (book.B
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	author, categories, err := r.storeChildren(ctx, dto.Author, dto.Categories)
-	if err != nil {
-		return book.Book{}, err
-	}
-
 	b := book.Book{
 		ID:         uuid.New(),
 		Name:       dto.Name,
-		Author:     author,
-		Categories: categories,
+		Author:     dto.Author,
+		Categories: dto.Categories,
 	}
 	item := bookrepo.StoredBook{
 		Book: b,
@@ -100,15 +112,11 @@ func (r *Repository) Update(ctx context.Context, dto book.Book) (book.Book, erro
 			if item.IsDeleted() {
 				return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", dto.ID)}
 			}
-			author, categories, err := r.storeChildren(ctx, dto.Author, dto.Categories)
-			if err != nil {
-				return book.Book{}, err
-			}
 			b := book.Book{
 				ID:         dto.ID,
 				Name:       dto.Name,
-				Author:     author,
-				Categories: categories,
+				Author:     dto.Author,
+				Categories: dto.Categories,
 			}
 			r.data[i] = bookrepo.StoredBook{
 				Book: b,
@@ -152,60 +160,4 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Book, error
 		}
 	}
 	return book.Book{}, &commonerrors.NotFound{What: fmt.Sprintf("Book with ID %s", id)}
-}
-
-func (r *Repository) storeChildren(
-	ctx context.Context,
-	authorDto book.Author,
-	categoriesDto []book.Category,
-) (author book.Author, categories []book.Category, err error) {
-	author, err = r.storeAuthor(ctx, authorDto)
-	if err != nil {
-		return
-	}
-	categories, err = r.storeCategories(ctx, categoriesDto)
-	return
-}
-
-func (r *Repository) storeAuthor(
-	ctx context.Context,
-	dto book.Author,
-) (aut book.Author, err error) {
-	if dto.ID.IsZero() {
-		aut, err = r.authorRepo.Create(ctx, author.CreateDTO{Name: dto.Name})
-	} else {
-		aut, err = r.authorRepo.Update(ctx, dto)
-	}
-	return
-}
-
-func (r *Repository) storeCategories(
-	ctx context.Context,
-	dtos []book.Category,
-) (categories []book.Category, err error) {
-	categories = make([]book.Category, len(dtos))
-	var cat book.Category
-	for i, dto := range dtos {
-		cat, err = r.storeCategory(ctx, dto)
-		if err != nil {
-			return
-		}
-		categories[i] = cat
-	}
-	return
-}
-
-func (r *Repository) storeCategory(
-	ctx context.Context,
-	dto book.Category,
-) (cat book.Category, err error) {
-	if dto.ID.IsZero() {
-		cat, err = r.categoryRepo.Create(ctx, category.CreateDTO{
-			Name:     dto.Name,
-			ParentID: dto.ParentID,
-		})
-	} else {
-		cat, err = r.categoryRepo.Update(ctx, dto)
-	}
-	return
 }

@@ -23,8 +23,7 @@ type StoredBook struct {
 
 // Repository of Categories
 type Repository interface {
-	GetAll(ctx context.Context) ([]book.Book, error)
-	Get(ctx context.Context, id uuid.UUID) (book.Book, error)
+	Get(ctx context.Context, from, count uint, query book.Query) ([]book.Book, error)
 	Create(ctx context.Context, dto CreateDTO) (book.Book, error)
 	Update(ctx context.Context, dto book.Book) (book.Book, error)
 	Delete(ctx context.Context, id uuid.UUID) (book.Book, error)

@@ -15,18 +15,18 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
+var aut = book.Author{ID: uuid.New(), Name: "authorA"}
+var cat = book.Category{ID: uuid.New(), Name: "catA"}
 var books = []bookrepo.CreateDTO{
 	{
-		Name:   "bookA",
-		Author: book.Author{Name: "authorA"},
-		Categories: []book.Category{
-			{Name: "catA"},
-		},
+		Name:       "bookA",
+		Author:     aut,
+		Categories: []book.Category{cat},
 	},
 	{
 		Name: "bookB",
 		Categories: []book.Category{
-			{Name: "catA"},
+			cat,
 			{},
 		},
 	},
@@ -35,40 +35,58 @@ var exAuthor book.Author
 var exCategory book.Category
 var ctx = context.Background()
 
-func TestGetAll(t *testing.T) {
-	repo := setup(t)
-	stored, err := repo.GetAll(ctx)
-	if err != nil {
-		t.Errorf("Error while getting all stored items: %s", err)
-	}
-	if len(stored) != len(books) {
-		t.Errorf("Expected to have %d items stored, got %d", len(books), len(stored))
-	}
-}
-
 func TestGet(t *testing.T) {
 	repo := setup(t)
-	stored, _ := repo.GetAll(ctx)
-	for _, item := range stored {
-		found, err := repo.Get(ctx, item.ID)
-		if err != nil {
-			t.Errorf("Error while getting item: %s", err)
-		}
-		if found.Name != item.Name || found.ID != item.ID {
-			t.Error("Got wrong item")
-		}
+	count := uint(len(books))
+	res, err := repo.Get(ctx, 0, count, book.Query{})
+	if err != nil {
+		t.Errorf("Error getting all books: %s", err)
 	}
-}
+	if len(res) != len(books) {
+		t.Errorf("Expected to get all books, got only %d", len(res))
+	}
+	stored := res
 
-func TestGetNonExisting(t *testing.T) {
-	repo := setup(t)
-	_, err := repo.Get(ctx, uuid.New())
-	checkNotFound(t, err)
+	from := uint(1)
+	res, err = repo.Get(ctx, from, count, book.Query{})
+	if uint(len(res)) != count-from {
+		t.Errorf("Expected to get all books minus 1, got %d", len(res))
+	}
+
+	res, err = repo.Get(ctx, 0, 1, book.Query{})
+	if len(res) != 1 {
+		t.Errorf("Expected to get 1 book, got %d", len(res))
+	}
+
+	res, err = repo.Get(ctx, 0, count, book.Query{Author: exAuthor.ID})
+	if len(res) != 1 {
+		t.Errorf("Expected to get 1 book, got %d", len(res))
+	}
+	if res[0].ID != stored[1].ID {
+		t.Error("Got wrong book with query by author")
+	}
+
+	res, err = repo.Get(ctx, 0, count, book.Query{
+		Categories: []uuid.UUID{exCategory.ID},
+	})
+	if len(res) != 1 {
+		t.Errorf("Expected to get 1 book, got %d", len(res))
+	}
+	if res[0].ID != stored[1].ID {
+		t.Error("Got wrong book with query by category")
+	}
+
+	res, err = repo.Get(ctx, 0, count, book.Query{
+		Author:     aut.ID,
+		Categories: []uuid.UUID{exCategory.ID},
+	})
+	if len(res) != 0 {
+		t.Errorf("Expected to get no books, got %d", len(res))
+	}
 }
 
 func TestCreate(t *testing.T) {
-	repo := setup(t)
-	repo.GetAll(ctx)
+	setup(t)
 }
 
 func TestUpdate(t *testing.T) {
@@ -177,7 +195,7 @@ func findByName(name string, data []book.Book, t *testing.T) book.Book {
 func setup(t *testing.T) bookrepo.Repository {
 	authorRepo := authorInMemory.New()
 	categoryRepo := categoryInMemory.New()
-	repo := inmemory.New(authorRepo, categoryRepo)
+	repo := inmemory.New()
 
 	var err error
 	exAuthor, err = authorRepo.Create(ctx, author.CreateDTO{Name: "authorB"})
@@ -208,7 +226,7 @@ func setup(t *testing.T) bookrepo.Repository {
 
 func setupMutation(t *testing.T) (bookrepo.Repository, []book.Book) {
 	repo := setup(t)
-	stored, err := repo.GetAll(ctx)
+	stored, err := repo.Get(ctx, 0, uint(len(books)), book.Query{})
 	if err != nil {
 		t.Errorf("Error while fetching all data: %s", err)
 	}

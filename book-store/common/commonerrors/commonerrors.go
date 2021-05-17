@@ -8,3 +8,12 @@ type NotFound struct {
 func (e NotFound) Error() string {
 	return e.What + " not found"
 }
+
+// InvalidInput represents error that someone provided invalid input
+type InvalidInput struct {
+	Reason string
+}
+
+func (e InvalidInput) Error() string {
+	return "Invalid input: " + e.Reason
+}
