@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"math/rand"
 	"time"
+
+	"github.com/Vesninovich/go-tasks/book-store/common/commonerrors"
 )
 
 var random = rand.New(rand.NewSource(time.Now().Unix()))
@@ -21,6 +23,19 @@ func New() UUID {
 	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
 	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant is 10
 	return uuid
+}
+
+// From returns UUID from given bytes slice
+func From(bytes []byte) (UUID, error) {
+	if len(bytes) != 16 {
+		return zero, &commonerrors.InvalidInput{Reason: "length of bytes slice for uuid must be 16"}
+	}
+	var res UUID
+	for i, b := range bytes {
+		res[i] = b
+	}
+	// TODO: add check for correctness
+	return res, nil
 }
 
 func (uuid UUID) String() string {

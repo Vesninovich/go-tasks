@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option go_package = "github.com/Vesninovich/go-tasks/book-store/common/catalog";
+
+package catalog;
+
+service Catalog {
+  rpc GetBooks(BooksQuery) returns (stream Book) {}
+  rpc CreateBook(BookCreateDTO) returns (Book) {}
+}
+
+message Book {
+  bytes id = 1;
+  string name = 2;
+  Author author = 3;
+  repeated Category categories = 4;
+}
+
+message Author {
+  bytes id = 1;
+  string name = 2;
+}
+
+message Category {
+  bytes id = 1;
+  string name = 2;
+  bytes parentId = 3;
+}
+
+message BookCreateDTO {
+  string name = 1;
+  bytes author = 2;
+  repeated bytes categories = 3;
+}
+
+message BooksQuery {
+  optional uint32 from = 1;
+  optional uint32 count = 2;
+  optional bytes author = 3;
+  repeated bytes categories = 4;
+}
