@@ -200,11 +200,11 @@ func setup(t *testing.T) bookrepo.Repository {
 	var err error
 	exAuthor, err = authorRepo.Create(ctx, author.CreateDTO{Name: "authorB"})
 	if err != nil {
-		t.Error("Error in setup: failed to create author")
+		t.Fatal("Error in setup: failed to create author")
 	}
 	exCategory, err = categoryRepo.Create(ctx, category.CreateDTO{Name: "catB"})
 	if err != nil {
-		t.Error("Error in setup: failed to create category")
+		t.Fatal("Error in setup: failed to create category")
 	}
 	books[1].Author = book.Author{
 		ID:   exAuthor.ID,
@@ -218,7 +218,7 @@ func setup(t *testing.T) bookrepo.Repository {
 	for _, a := range books {
 		_, err := repo.Create(ctx, a)
 		if err != nil {
-			t.Errorf("Error while creating category %s: %s", a, err)
+			t.Fatalf("Error while creating category %s: %s", a, err)
 		}
 	}
 	return repo
@@ -228,7 +228,7 @@ func setupMutation(t *testing.T) (bookrepo.Repository, []book.Book) {
 	repo := setup(t)
 	stored, err := repo.Get(ctx, 0, uint(len(books)), book.Query{})
 	if err != nil {
-		t.Errorf("Error while fetching all data: %s", err)
+		t.Fatalf("Error while fetching all data: %s", err)
 	}
 	return repo, stored
 }
@@ -238,7 +238,7 @@ func setupAlreadyDeleted(t *testing.T) (bookrepo.Repository, uuid.UUID, []book.B
 	id := stored[0].ID
 	_, err := repo.Delete(ctx, id)
 	if err != nil {
-		t.Errorf("Error deleting item: %s", err)
+		t.Fatalf("Error deleting item: %s", err)
 	}
 	return repo, id, stored
 }

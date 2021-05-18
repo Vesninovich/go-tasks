@@ -145,7 +145,7 @@ func setup(t *testing.T) category.Repository {
 	for _, a := range categories {
 		_, err := repo.Create(ctx, a)
 		if err != nil {
-			t.Errorf("Error while creating category %s: %s", a, err)
+			t.Fatalf("Error while creating category %s: %s", a, err)
 		}
 	}
 	return repo
@@ -155,7 +155,7 @@ func setupMutation(t *testing.T) (category.Repository, []book.Category) {
 	repo := setup(t)
 	stored, err := repo.GetAll(ctx)
 	if err != nil {
-		t.Errorf("Error while fetching all data: %s", err)
+		t.Fatalf("Error while fetching all data: %s", err)
 	}
 	return repo, stored
 }
@@ -165,7 +165,7 @@ func setupAlreadyDeleted(t *testing.T) (category.Repository, uuid.UUID, []book.C
 	id := stored[0].ID
 	_, err := repo.Delete(ctx, id)
 	if err != nil {
-		t.Errorf("Error deleting item: %s", err)
+		t.Fatalf("Error deleting item: %s", err)
 	}
 	return repo, id, stored
 }

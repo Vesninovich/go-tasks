@@ -77,12 +77,12 @@ func setup(t *testing.T) *bookservice.BookService {
 	var err error
 	author, err = as.CreateAuthor(ctx, author.Name)
 	if err != nil {
-		t.Errorf("Error while creating author: %s", err)
+		t.Fatalf("Error while creating author: %s", err)
 	}
 	for i, c := range categories {
 		created, err := cs.CreateCategory(ctx, c.Name)
 		if err != nil {
-			t.Errorf("Error while creating category: %s", err)
+			t.Fatalf("Error while creating category: %s", err)
 		}
 		categories[i] = created
 	}
