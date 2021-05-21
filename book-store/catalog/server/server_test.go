@@ -108,7 +108,7 @@ func TestGetBooks(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create valid book: %s", err)
 	}
-	b0ID, err := uuid.From(b0.Id)
+	b0ID, err := uuid.FromBytes(b0.Id)
 	if err != nil {
 		t.Errorf("Failed to read uuid of book: %s", err)
 	}
@@ -123,7 +123,7 @@ func TestGetBooks(t *testing.T) {
 	if err != nil {
 		t.Errorf("Failed to create valid book: %s", err)
 	}
-	b1ID, err := uuid.From(b1.Id)
+	b1ID, err := uuid.FromBytes(b1.Id)
 	if err != nil {
 		t.Errorf("Failed to read uuid of book: %s", err)
 	}
@@ -156,7 +156,7 @@ func TestGetBooks(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to read book from stream: %s", err)
 		}
-		id, err := uuid.From(b.Id)
+		id, err := uuid.FromBytes(b.Id)
 		if err != nil {
 			t.Errorf("Failed to get uuid of book: %s", err)
 		}
@@ -186,7 +186,7 @@ func TestGetBooks(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to read book from stream: %s", err)
 		}
-		id, err := uuid.From(b.Id)
+		id, err := uuid.FromBytes(b.Id)
 		if err != nil {
 			t.Errorf("Failed to get uuid of book: %s", err)
 		}

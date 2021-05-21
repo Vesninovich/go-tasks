@@ -2,6 +2,7 @@ package uuid
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -25,8 +26,8 @@ func New() UUID {
 	return uuid
 }
 
-// From returns UUID from given bytes slice
-func From(bytes []byte) (UUID, error) {
+// FromBytes returns UUID from given bytes slice
+func FromBytes(bytes []byte) (UUID, error) {
 	if len(bytes) != 16 {
 		return zero, &commonerrors.InvalidInput{Reason: "length of bytes slice for uuid must be 16"}
 	}
@@ -36,6 +37,32 @@ func From(bytes []byte) (UUID, error) {
 	}
 	// TODO: add check for correctness
 	return res, nil
+}
+
+// FromString returns UUID from given UUID string
+func FromString(str string) (res UUID, err error) {
+	if len(str) != 36 || str[8] != '-' || str[13] != '-' || str[18] != '-' || str[23] != '-' {
+		return zero, fmt.Errorf("Malformed UUID string: %s", str)
+	}
+	b := []byte(str)
+	_, err = hex.Decode(res[:], b[:8])
+	if err != nil {
+		return
+	}
+	_, err = hex.Decode(res[4:], b[9:13])
+	if err != nil {
+		return
+	}
+	_, err = hex.Decode(res[6:], b[14:18])
+	if err != nil {
+		return
+	}
+	_, err = hex.Decode(res[8:], b[19:23])
+	if err != nil {
+		return
+	}
+	_, err = hex.Decode(res[10:], b[24:])
+	return
 }
 
 func (uuid UUID) String() string {

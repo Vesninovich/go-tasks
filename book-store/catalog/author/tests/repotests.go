@@ -16,26 +16,29 @@ var authors = []author.CreateDTO{
 }
 var ctx = context.Background()
 
+// Constructor is function that constructs repository to test
 type Constructor func(*testing.T) author.Repository
 
+// RepoGetAll tests getting all data
 func RepoGetAll(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	stored, err := repo.GetAll(ctx)
 	if err != nil {
-		t.Errorf("Error while getting all stored items: %s", err)
+		t.Fatalf("Error while getting all stored items: %s", err)
 	}
 	if len(stored) != len(authors) {
 		t.Errorf("Expected to have %d items stored, got %d", len(authors), len(stored))
 	}
 }
 
+// RepoGet tests getting item by id
 func RepoGet(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	stored, _ := repo.GetAll(ctx)
 	for _, item := range stored {
 		found, err := repo.Get(ctx, item.ID)
 		if err != nil {
-			t.Errorf("Error while getting item: %s", err)
+			t.Fatalf("Error while getting item: %s", err)
 		}
 		if found.Name != item.Name || found.ID != item.ID {
 			t.Error("Got wrong item")
@@ -43,17 +46,20 @@ func RepoGet(t *testing.T, c Constructor) {
 	}
 }
 
+// RepoGetNonExisting tests getting non-existing item by id
 func RepoGetNonExisting(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	_, err := repo.Get(ctx, uuid.New())
 	checkNotFound(t, err)
 }
 
+// RepoCreate tests creating items
 func RepoCreate(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	repo.GetAll(ctx)
 }
 
+// RepoUpdate tests updating item
 func RepoUpdate(t *testing.T, c Constructor) {
 	repo, stored := setupMutation(t, c)
 	id := stored[0].ID
@@ -63,13 +69,14 @@ func RepoUpdate(t *testing.T, c Constructor) {
 		Name: name,
 	})
 	if err != nil {
-		t.Errorf("Error while updating item: %s", err)
+		t.Fatalf("Error while updating item: %s", err)
 	}
 	if replaced.Name != name {
 		t.Errorf("Expected to update item with data %s, got %s", name, replaced.Name)
 	}
 }
 
+// RepoUpdateNonExisting tests updating non-existing item
 func RepoUpdateNonExisting(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	_, err := repo.Update(ctx, book.Author{
@@ -79,6 +86,7 @@ func RepoUpdateNonExisting(t *testing.T, c Constructor) {
 	checkNotFound(t, err)
 }
 
+// RepoUpdateDeleted tests updating deleted item
 func RepoUpdateDeleted(t *testing.T, c Constructor) {
 	repo, id, _ := setupAlreadyDeleted(t, c)
 	_, err := repo.Update(ctx, book.Author{
@@ -88,6 +96,7 @@ func RepoUpdateDeleted(t *testing.T, c Constructor) {
 	checkNotFound(t, err)
 }
 
+// RepoUpdateWithSomeDeleted tests updating item if some are deleted
 func RepoUpdateWithSomeDeleted(t *testing.T, c Constructor) {
 	repo, id, stored := setupAlreadyDeleted(t, c)
 	var item book.Author
@@ -102,29 +111,34 @@ func RepoUpdateWithSomeDeleted(t *testing.T, c Constructor) {
 		Name: name,
 	})
 	if err != nil {
-		t.Errorf("Error while updating item with some deleted: %s", err)
+		t.Fatalf("Error while updating item with some deleted: %s", err)
 	}
 	if replaced.Name != name {
 		t.Errorf("Expected to update item with data %s, got %s", name, replaced.Name)
 	}
 }
 
+// RepoDelete tests deleting item
 func RepoDelete(t *testing.T, c Constructor) {
 	repo, stored := setupMutation(t, c)
 	for _, item := range stored {
 		_, err := repo.Delete(ctx, item.ID)
 		if err != nil {
-			t.Errorf("Error while deleting item: %s", err)
+			t.Fatalf("Error while deleting item: %s", err)
 		}
+		_, err = repo.Get(ctx, item.ID)
+		checkNotFound(t, err)
 	}
 }
 
+// RepoDeleteTwice tests deleting item twice
 func RepoDeleteTwice(t *testing.T, c Constructor) {
 	repo, id, _ := setupAlreadyDeleted(t, c)
 	_, err := repo.Delete(ctx, id)
 	checkNotFound(t, err)
 }
 
+// RepoDeleteNonExisting tests deleting non-existing item
 func RepoDeleteNonExisting(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	_, err := repo.Delete(ctx, uuid.New())
@@ -173,7 +187,7 @@ func setupAlreadyDeleted(t *testing.T, c Constructor) (author.Repository, uuid.U
 
 func checkNotFound(t *testing.T, err error) {
 	if err == nil {
-		t.Errorf("Expected to get NotFound error")
+		t.Fatal("Expected to get NotFound error")
 	}
 	if _, typeCorrect := err.(*commonerrors.NotFound); !typeCorrect {
 		t.Errorf("Expected to get error of type *commonerrors.NotFound, got %T", err)

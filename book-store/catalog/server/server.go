@@ -72,7 +72,7 @@ func (s *Server) CreateBook(ctx context.Context, dto *catalog.BookCreateDTO) (*c
 
 func getUUIDs(author []byte, categories [][]byte) (autID uuid.UUID, catIDs []uuid.UUID, err error) {
 	if len(author) != 0 {
-		autID, err = uuid.From(author)
+		autID, err = uuid.FromBytes(author)
 		if err != nil {
 			return
 		}
@@ -82,7 +82,7 @@ func getUUIDs(author []byte, categories [][]byte) (autID uuid.UUID, catIDs []uui
 	var id uuid.UUID
 	catIDs = make([]uuid.UUID, len(categories))
 	for i, c := range categories {
-		id, err = uuid.From(c)
+		id, err = uuid.FromBytes(c)
 		if err != nil {
 			return
 		}
