@@ -1,15 +1,44 @@
-package inmemory_test
+// +build sql
+
+package sql_test
 
 import (
+	"context"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/Vesninovich/go-tasks/book-store/catalog/category"
-	"github.com/Vesninovich/go-tasks/book-store/catalog/category/inmemory"
+	categorysql "github.com/Vesninovich/go-tasks/book-store/catalog/category/sql"
 	"github.com/Vesninovich/go-tasks/book-store/catalog/category/tests"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
 )
 
+const dbURL = "postgresql://gobookstorecatalog@localhost:5432/gobookstore"
+
+var db *sqlx.DB
+
+func TestMain(m *testing.M) {
+	var err error
+	db, err = sqlx.Connect("pgx", dbURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to DB at URL %s\n%s", dbURL, err)
+	}
+	defer db.Close()
+	db.MustExec(categorysql.Table)
+	res := m.Run()
+	db.MustExec("DROP TABLE categories;")
+	os.Exit(res)
+}
+
 func constructor(t *testing.T) category.Repository {
-	return inmemory.New()
+	t.Cleanup(clear)
+	return categorysql.New(db)
+}
+
+func clear() {
+	db.MustExecContext(context.Background(), "DELETE FROM categories;")
 }
 
 func TestGetAll(t *testing.T) {
