@@ -8,10 +8,10 @@ import (
 	authorInMemory "github.com/Vesninovich/go-tasks/book-store/catalog/author/inmemory"
 	bookrepo "github.com/Vesninovich/go-tasks/book-store/catalog/book"
 	"github.com/Vesninovich/go-tasks/book-store/catalog/book/inmemory"
+	"github.com/Vesninovich/go-tasks/book-store/catalog/book/tests"
 	"github.com/Vesninovich/go-tasks/book-store/catalog/category"
 	categoryInMemory "github.com/Vesninovich/go-tasks/book-store/catalog/category/inmemory"
 	"github.com/Vesninovich/go-tasks/book-store/common/book"
-	"github.com/Vesninovich/go-tasks/book-store/common/commonerrors"
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
@@ -35,219 +35,42 @@ var exAuthor book.Author
 var exCategory book.Category
 var ctx = context.Background()
 
+func constructor(t *testing.T) (author.Repository, category.Repository, bookrepo.Repository) {
+	return authorInMemory.New(), categoryInMemory.New(), inmemory.New()
+}
+
 func TestGet(t *testing.T) {
-	repo := setup(t)
-	count := uint(len(books))
-	res, err := repo.Get(ctx, 0, count, book.Query{})
-	if err != nil {
-		t.Errorf("Error getting all books: %s", err)
-	}
-	if len(res) != len(books) {
-		t.Errorf("Expected to get all books, got only %d", len(res))
-	}
-	stored := res
-
-	from := uint(1)
-	res, err = repo.Get(ctx, from, count, book.Query{})
-	if uint(len(res)) != count-from {
-		t.Errorf("Expected to get all books minus 1, got %d", len(res))
-	}
-
-	res, err = repo.Get(ctx, 0, 1, book.Query{})
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-
-	res, err = repo.Get(ctx, 0, count, book.Query{Author: exAuthor.ID})
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-	if res[0].ID != stored[1].ID {
-		t.Error("Got wrong book with query by author")
-	}
-
-	res, err = repo.Get(ctx, 0, count, book.Query{
-		Categories: []uuid.UUID{exCategory.ID},
-	})
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-	if res[0].ID != stored[1].ID {
-		t.Error("Got wrong book with query by category")
-	}
-
-	res, err = repo.Get(ctx, 0, count, book.Query{
-		Author:     aut.ID,
-		Categories: []uuid.UUID{exCategory.ID},
-	})
-	if len(res) != 0 {
-		t.Errorf("Expected to get no books, got %d", len(res))
-	}
+	tests.RepoGet(t, constructor)
 }
 
 func TestCreate(t *testing.T) {
-	setup(t)
+	tests.RepoCreate(t, constructor)
 }
 
 func TestUpdate(t *testing.T) {
-	repo, stored := setupMutation(t)
-	id := stored[0].ID
-	name := "asddsa"
-	aut := book.Author{Name: "authorC"}
-	cat := []book.Category{{Name: "catC"}}
-	replaced, err := repo.Update(ctx, book.Book{
-		ID:         id,
-		Name:       name,
-		Author:     aut,
-		Categories: cat,
-	})
-	if err != nil {
-		t.Errorf("Error while updating item: %s", err)
-	}
-	if replaced.Name != name ||
-		replaced.Author.Name != aut.Name ||
-		replaced.Categories[0].Name != cat[0].Name {
-		t.Errorf("Expected to update item with data")
-	}
+	tests.RepoUpdate(t, constructor)
 }
 
 func TestUpdateNonExisting(t *testing.T) {
-	repo := setup(t)
-	_, err := repo.Update(ctx, book.Book{
-		ID:         uuid.New(),
-		Name:       "",
-		Author:     book.Author{},
-		Categories: []book.Category{},
-	})
-	checkNotFound(t, err)
+	tests.RepoUpdateNonExisting(t, constructor)
 }
 
 func TestUpdateDeleted(t *testing.T) {
-	repo, id, _ := setupAlreadyDeleted(t)
-	_, err := repo.Update(ctx, book.Book{
-		ID:         id,
-		Name:       "",
-		Author:     book.Author{},
-		Categories: []book.Category{},
-	})
-	checkNotFound(t, err)
+	tests.RepoUpdateDeleted(t, constructor)
 }
 
 func TestUpdateWithSomeDeleted(t *testing.T) {
-	repo, id, stored := setupAlreadyDeleted(t)
-	var item book.Book
-	for _, item = range stored {
-		if item.ID != id {
-			break
-		}
-	}
-	name := "asddsa"
-	aut := book.Author{Name: "authorC"}
-	cat := []book.Category{{Name: "catC"}}
-	replaced, err := repo.Update(ctx, book.Book{
-		ID:         item.ID,
-		Name:       name,
-		Author:     aut,
-		Categories: cat,
-	})
-	if err != nil {
-		t.Errorf("Error while updating item with some deleted: %s", err)
-	}
-	if replaced.Name != name ||
-		replaced.Author.Name != aut.Name ||
-		replaced.Categories[0].Name != cat[0].Name {
-		t.Errorf("Expected to update item with data")
-	}
+	tests.RepoUpdateWithSomeDeleted(t, constructor)
 }
 
 func TestDelete(t *testing.T) {
-	repo, stored := setupMutation(t)
-	for _, item := range stored {
-		_, err := repo.Delete(ctx, item.ID)
-		if err != nil {
-			t.Errorf("Error while deleting item: %s", err)
-		}
-	}
+	tests.RepoDelete(t, constructor)
 }
 
 func TestDeleteTwice(t *testing.T) {
-	repo, id, _ := setupAlreadyDeleted(t)
-	_, err := repo.Delete(ctx, id)
-	checkNotFound(t, err)
+	tests.RepoDeleteTwice(t, constructor)
 }
 
 func TestDeleteNonExisting(t *testing.T) {
-	repo := setup(t)
-	_, err := repo.Delete(ctx, uuid.New())
-	checkNotFound(t, err)
-}
-
-func findByName(name string, data []book.Book, t *testing.T) book.Book {
-	for _, item := range data {
-		if item.Name == name {
-			return item
-		}
-	}
-	t.Errorf("Item with name %s not found", name)
-	return book.Book{}
-}
-
-func setup(t *testing.T) bookrepo.Repository {
-	authorRepo := authorInMemory.New()
-	categoryRepo := categoryInMemory.New()
-	repo := inmemory.New()
-
-	var err error
-	exAuthor, err = authorRepo.Create(ctx, author.CreateDTO{Name: "authorB"})
-	if err != nil {
-		t.Fatal("Error in setup: failed to create author")
-	}
-	exCategory, err = categoryRepo.Create(ctx, category.CreateDTO{Name: "catB"})
-	if err != nil {
-		t.Fatal("Error in setup: failed to create category")
-	}
-	books[1].Author = book.Author{
-		ID:   exAuthor.ID,
-		Name: exAuthor.Name,
-	}
-	books[1].Categories[1] = book.Category{
-		ID:   exCategory.ID,
-		Name: exCategory.Name,
-	}
-
-	for _, a := range books {
-		_, err := repo.Create(ctx, a)
-		if err != nil {
-			t.Fatalf("Error while creating category %s: %s", a, err)
-		}
-	}
-	return repo
-}
-
-func setupMutation(t *testing.T) (bookrepo.Repository, []book.Book) {
-	repo := setup(t)
-	stored, err := repo.Get(ctx, 0, uint(len(books)), book.Query{})
-	if err != nil {
-		t.Fatalf("Error while fetching all data: %s", err)
-	}
-	return repo, stored
-}
-
-func setupAlreadyDeleted(t *testing.T) (bookrepo.Repository, uuid.UUID, []book.Book) {
-	repo, stored := setupMutation(t)
-	id := stored[0].ID
-	_, err := repo.Delete(ctx, id)
-	if err != nil {
-		t.Fatalf("Error deleting item: %s", err)
-	}
-	return repo, id, stored
-}
-
-func checkNotFound(t *testing.T, err error) {
-	if err == nil {
-		t.Errorf("Expected to get NotFound error")
-	}
-	if _, typeCorrect := err.(*commonerrors.NotFound); !typeCorrect {
-		t.Errorf("Expected to get error of type *commonerrors.NotFound, got %T", err)
-	}
+	tests.RepoDeleteNonExisting(t, constructor)
 }
