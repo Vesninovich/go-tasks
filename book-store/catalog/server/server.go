@@ -25,7 +25,7 @@ func New(bookService *bookservice.BookService) *Server {
 
 // GetBooks streams books
 func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooksServer) (err error) {
-	autID, catIDs, err := getUUIDs(q.Author, q.Categories)
+	bookID, autID, catIDs, err := getUUIDs(q.Id, q.Author, q.Categories)
 	if err != nil {
 		return
 	}
@@ -41,6 +41,7 @@ func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooks
 		count = uint(*q.Count)
 	}
 	data, err := s.bookService.GetBooks(context.Background(), from, count, book.Query{
+		ID:         bookID,
 		Author:     autID,
 		Categories: catIDs,
 	})
@@ -55,7 +56,7 @@ func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooks
 
 // CreateBook creates book
 func (s *Server) CreateBook(ctx context.Context, dto *catalog.BookCreateDTO) (*catalog.Book, error) {
-	autID, catIDs, err := getUUIDs(dto.Author, dto.Categories)
+	_, autID, catIDs, err := getUUIDs(nil, dto.Author, dto.Categories)
 	if err != nil {
 		return nil, err
 	}
@@ -70,14 +71,18 @@ func (s *Server) CreateBook(ctx context.Context, dto *catalog.BookCreateDTO) (*c
 	return makeBookResponse(b), err
 }
 
-func getUUIDs(author []byte, categories [][]byte) (autID uuid.UUID, catIDs []uuid.UUID, err error) {
-	if len(author) != 0 {
+func getUUIDs(bID []byte, author []byte, categories [][]byte) (bookID uuid.UUID, autID uuid.UUID, catIDs []uuid.UUID, err error) {
+	if bID != nil && len(bID) != 0 {
+		bookID, err = uuid.FromBytes(bID)
+		if err != nil {
+			return
+		}
+	}
+	if author != nil && len(author) != 0 {
 		autID, err = uuid.FromBytes(author)
 		if err != nil {
 			return
 		}
-	} else {
-		autID = uuid.UUID{}
 	}
 	var id uuid.UUID
 	catIDs = make([]uuid.UUID, len(categories))

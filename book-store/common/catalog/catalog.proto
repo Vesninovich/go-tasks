@@ -36,6 +36,7 @@ message BookCreateDTO {
 message BooksQuery {
   optional uint32 from = 1;
   optional uint32 count = 2;
-  optional bytes author = 3;
-  repeated bytes categories = 4;
+  optional bytes id = 3;
+  optional bytes author = 4;
+  repeated bytes categories = 5;
 }

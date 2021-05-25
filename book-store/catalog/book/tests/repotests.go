@@ -50,16 +50,25 @@ func RepoGet(t *testing.T, c Constructor) {
 
 	from := uint(1)
 	res, err = repo.Get(ctx, from, count, book.Query{})
+	if err != nil {
+		t.Errorf("Error getting books: %s", err)
+	}
 	if uint(len(res)) != count-from {
 		t.Errorf("Expected to get all books minus 1, got %d", len(res))
 	}
 
 	res, err = repo.Get(ctx, 0, 1, book.Query{})
+	if err != nil {
+		t.Errorf("Error getting books: %s", err)
+	}
 	if len(res) != 1 {
 		t.Errorf("Expected to get 1 book, got %d", len(res))
 	}
 
 	res, err = repo.Get(ctx, 0, count, book.Query{Author: exAuthor.ID})
+	if err != nil {
+		t.Errorf("Error getting books: %s", err)
+	}
 	if len(res) != 1 {
 		t.Errorf("Expected to get 1 book, got %d", len(res))
 	}
@@ -70,6 +79,9 @@ func RepoGet(t *testing.T, c Constructor) {
 	res, err = repo.Get(ctx, 0, count, book.Query{
 		Categories: []uuid.UUID{exCategory.ID},
 	})
+	if err != nil {
+		t.Errorf("Error getting books: %s", err)
+	}
 	if len(res) != 1 {
 		t.Errorf("Expected to get 1 book, got %d", len(res))
 	}
@@ -81,8 +93,24 @@ func RepoGet(t *testing.T, c Constructor) {
 		Author:     aut.ID,
 		Categories: []uuid.UUID{exCategory.ID},
 	})
+	if err != nil {
+		t.Errorf("Error getting books: %s", err)
+	}
 	if len(res) != 0 {
 		t.Errorf("Expected to get no books, got %d", len(res))
+	}
+
+	res, err = repo.Get(ctx, 0, count, book.Query{
+		ID: stored[1].ID,
+	})
+	if err != nil {
+		t.Errorf("Error getting books: %s", err)
+	}
+	if len(res) != 1 {
+		t.Errorf("Expected to get 1 book, got %d", len(res))
+	}
+	if res[0].ID != stored[1].ID {
+		t.Error("Got wrong book with query by ID")
 	}
 }
 

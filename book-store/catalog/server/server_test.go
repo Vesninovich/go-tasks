@@ -136,6 +136,7 @@ func TestGetBooks(t *testing.T) {
 
 	zero := uint32(0)
 	one := uint32(1)
+	two := uint32(2)
 	stream, err := client.GetBooks(ctx, &pb.BooksQuery{
 		From:   &zero,
 		Count:  &one,
@@ -170,6 +171,36 @@ func TestGetBooks(t *testing.T) {
 		From:       &zero,
 		Count:      &one,
 		Categories: [][]byte{cats[1].ID[:]},
+	})
+	if err != nil {
+		t.Errorf("Failed to get books: %s", err)
+	}
+	count = 0
+	for {
+		b, err := stream.Recv()
+		if err == io.EOF {
+			if count != 1 {
+				t.Errorf("Wrong number of books read, expected 1, got %d", count)
+			}
+			break
+		}
+		if err != nil {
+			t.Errorf("Failed to read book from stream: %s", err)
+		}
+		id, err := uuid.FromBytes(b.Id)
+		if err != nil {
+			t.Errorf("Failed to get uuid of book: %s", err)
+		}
+		if id != b1ID {
+			t.Errorf("Got wrong book")
+		}
+		count++
+	}
+
+	stream, err = client.GetBooks(ctx, &pb.BooksQuery{
+		From:  &zero,
+		Count: &two,
+		Id:    b1.Id,
 	})
 	if err != nil {
 		t.Errorf("Failed to get books: %s", err)

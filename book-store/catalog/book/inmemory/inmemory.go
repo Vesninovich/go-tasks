@@ -58,6 +58,9 @@ func (r *Repository) Get(ctx context.Context, from, count uint, query book.Query
 }
 
 func matchesQuery(query book.Query, item bookrepo.StoredBook) bool {
+	if !query.ID.IsZero() && item.ID != query.ID {
+		return false
+	}
 	if !query.Author.IsZero() && item.Author.ID != query.Author {
 		return false
 	}
