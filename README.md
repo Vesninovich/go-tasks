@@ -9,3 +9,6 @@
 [Задание 4 (Шифр Цезаря)](caesar) [PR #4](https://github.com/Vesninovich/go-tasks/pull/4) [PR #6](https://github.com/Vesninovich/go-tasks/pull/6)
 
 [Задание 5 (TODO app)](todos) [PR #7](https://github.com/Vesninovich/go-tasks/pull/7)
+
+[Задание 6 (Book Store)](https://github.com/Vesninovich/go-tasks/tree/task/book-store/book-store)
+[PR #8](https://github.com/Vesninovich/go-tasks/pull/8)
