@@ -17,3 +17,9 @@ Book to category many-to-many. У списка books будут фильтры �
 - https://github.com/Masterminds/squirrel
 - https://github.com/jmoiron/sqlx
 - https://github.com/swaggo/swag 
+
+## TODO
+- more rpc methods (cruds)
+- orders service testing
+- config from env vars
+- dockerize
