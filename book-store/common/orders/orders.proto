@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "github.com/Vesninovich/go-tasks/book-store/common/orders";
+
+package orders;
+
+service Orders {
+  rpc GetOrder(OrderID) returns (Order) {}
+  rpc CreateOrder(OrderCreateDTO) returns (Order) {}
+}
+
+message OrderID {
+  bytes id = 1;
+}
+
+message Order {
+  bytes id = 1;
+  string description = 2;
+  bytes book = 3;
+}
+
+message OrderCreateDTO {
+  string description = 1;
+  bytes book = 2;
+}
