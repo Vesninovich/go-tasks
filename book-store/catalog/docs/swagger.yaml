@@ -27,14 +27,10 @@ definitions:
   catalog.BookCreateDTO:
     properties:
       author:
-        items:
-          type: integer
-        type: array
+        $ref: '#/definitions/catalog.Author'
       categories:
         items:
-          items:
-            type: integer
-          type: array
+          $ref: '#/definitions/catalog.Category'
         type: array
       name:
         type: string
@@ -121,7 +117,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: add new book to catalog
+      description: |-
+        add new book to catalog
+        if nested objects are new (that is, they do not have an ID yet), they are created
+        if nested object has ID and it is not found, returns 404
       parameters:
       - description: book data
         in: body

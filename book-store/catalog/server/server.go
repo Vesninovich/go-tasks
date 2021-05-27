@@ -69,6 +69,8 @@ func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooks
 // CreateBook godoc
 // @Summary create book
 // @Description add new book to catalog
+// @Description if nested objects are new (that is, they do not have an ID yet), they are created
+// @Description if nested object has ID and it is not found, returns 404
 // @Tags Book
 // @Accept json
 // @Produce json

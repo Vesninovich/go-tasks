@@ -78,7 +78,7 @@ var doc = `{
                 }
             },
             "post": {
-                "description": "add new book to catalog",
+                "description": "add new book to catalog\nif nested objects are new (that is, they do not have an ID yet), they are created\nif nested object has ID and it is not found, returns 404",
                 "consumes": [
                     "application/json"
                 ],
@@ -171,18 +171,12 @@ var doc = `{
             "type": "object",
             "properties": {
                 "author": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "$ref": "#/definitions/catalog.Author"
                 },
                 "categories": {
                     "type": "array",
                     "items": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
+                        "$ref": "#/definitions/catalog.Category"
                     }
                 },
                 "name": {
