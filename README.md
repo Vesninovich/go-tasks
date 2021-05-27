@@ -10,5 +10,4 @@
 
 [Задание 5 (TODO app)](todos) [PR #7](https://github.com/Vesninovich/go-tasks/pull/7)
 
-[Задание 6 (Book Store)](https://github.com/Vesninovich/go-tasks/tree/task/book-store/book-store)
-[PR #8](https://github.com/Vesninovich/go-tasks/pull/8)
+[Задание 6 (Book Store)](book-store) [PR #8](https://github.com/Vesninovich/go-tasks/pull/8)
