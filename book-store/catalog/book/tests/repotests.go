@@ -12,24 +12,12 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
-var aut = book.Author{ID: uuid.New(), Name: "authorA"}
-var cat = book.Category{ID: uuid.New(), Name: "catA"}
+var aut1, aut2 book.Author
+var cat1, cat2 book.Category
 var books = []bookrepo.CreateDTO{
-	{
-		Name:       "bookA",
-		Author:     aut,
-		Categories: []book.Category{cat},
-	},
-	{
-		Name: "bookB",
-		Categories: []book.Category{
-			cat,
-			{},
-		},
-	},
+	{Name: "bookA"},
+	{Name: "bookB"},
 }
-var exAuthor book.Author
-var exCategory book.Category
 var ctx = context.Background()
 
 // Constructor is function that constructs repository to test
@@ -39,79 +27,108 @@ type Constructor func(t *testing.T) (author.Repository, category.Repository, boo
 func RepoGet(t *testing.T, c Constructor) {
 	repo := setup(t, c)
 	count := uint(len(books))
+	from := uint(1)
 	res, err := repo.Get(ctx, 0, count, book.Query{})
 	if err != nil {
-		t.Errorf("Error getting all books: %s", err)
+		t.Fatalf("Error getting all books: %s", err)
 	}
 	if len(res) != len(books) {
-		t.Errorf("Expected to get all books, got only %d", len(res))
+		t.Fatalf("Expected to get all %d books, got %d", count, len(res))
 	}
 	stored := res
 
-	from := uint(1)
-	res, err = repo.Get(ctx, from, count, book.Query{})
-	if err != nil {
-		t.Errorf("Error getting books: %s", err)
-	}
-	if uint(len(res)) != count-from {
-		t.Errorf("Expected to get all books minus 1, got %d", len(res))
-	}
-
-	res, err = repo.Get(ctx, 0, 1, book.Query{})
-	if err != nil {
-		t.Errorf("Error getting books: %s", err)
-	}
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-
-	res, err = repo.Get(ctx, 0, count, book.Query{Author: exAuthor.ID})
-	if err != nil {
-		t.Errorf("Error getting books: %s", err)
-	}
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-	if res[0].ID != stored[1].ID {
-		t.Error("Got wrong book with query by author")
-	}
-
-	res, err = repo.Get(ctx, 0, count, book.Query{
-		Categories: []uuid.UUID{exCategory.ID},
+	t.Run("books from 1", func(t *testing.T) {
+		res, err = repo.Get(ctx, from, count, book.Query{})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if uint(len(res)) != count-from {
+			t.Fatalf("Expected to get all books minus 1, got %d", len(res))
+		}
 	})
-	if err != nil {
-		t.Errorf("Error getting books: %s", err)
-	}
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-	if res[0].ID != stored[1].ID {
-		t.Error("Got wrong book with query by category")
-	}
 
-	res, err = repo.Get(ctx, 0, count, book.Query{
-		Author:     aut.ID,
-		Categories: []uuid.UUID{exCategory.ID},
+	t.Run("1 book", func(t *testing.T) {
+		res, err = repo.Get(ctx, 0, 1, book.Query{})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("Expected to get 1 book, got %d", len(res))
+		}
 	})
-	if err != nil {
-		t.Errorf("Error getting books: %s", err)
-	}
-	if len(res) != 0 {
-		t.Errorf("Expected to get no books, got %d", len(res))
-	}
 
-	res, err = repo.Get(ctx, 0, count, book.Query{
-		ID: stored[1].ID,
+	t.Run("book by author", func(t *testing.T) {
+		res, err = repo.Get(ctx, 0, count, book.Query{Author: aut2.ID})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("Expected to get 1 book, got %d", len(res))
+		}
+		if res[0].ID != stored[1].ID {
+			t.Error("Got wrong book with query by author")
+		}
 	})
-	if err != nil {
-		t.Errorf("Error getting books: %s", err)
-	}
-	if len(res) != 1 {
-		t.Errorf("Expected to get 1 book, got %d", len(res))
-	}
-	if res[0].ID != stored[1].ID {
-		t.Error("Got wrong book with query by ID")
-	}
+
+	t.Run("book by categories", func(t *testing.T) {
+		res, err = repo.Get(ctx, 0, count, book.Query{
+			Categories: []uuid.UUID{cat2.ID},
+		})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("Expected to get 1 book, got %d", len(res))
+		}
+		if res[0].ID != stored[1].ID {
+			t.Error("Got wrong book with query by category")
+		}
+	})
+
+	t.Run("book by author and categories", func(t *testing.T) {
+		res, err = repo.Get(ctx, 0, count, book.Query{
+			Author:     aut2.ID,
+			Categories: []uuid.UUID{cat1.ID, cat2.ID},
+		})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("Expected to get 1 book, got %d", len(res))
+		}
+		if res[0].ID != stored[1].ID {
+			t.Error("Got wrong book with query by category")
+		}
+	})
+
+	t.Run("book by id", func(t *testing.T) {
+		res, err = repo.Get(ctx, 0, count, book.Query{
+			ID: stored[1].ID,
+		})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("Expected to get 1 book, got %d", len(res))
+		}
+		if res[0].ID != stored[1].ID ||
+			res[0].Author.ID != books[1].Author.ID ||
+			len(res[0].Categories) != len(books[1].Categories) {
+			t.Error("Got wrong book with query by ID")
+		}
+	})
+
+	t.Run("no books", func(t *testing.T) {
+		res, err = repo.Get(ctx, 0, count, book.Query{
+			Author: uuid.New(),
+		})
+		if err != nil {
+			t.Fatalf("Error getting books: %s", err)
+		}
+		if len(res) != 0 {
+			t.Fatalf("Expected to get 1 book, got %d", len(res))
+		}
+	})
 }
 
 // RepoCreate tests creating items
@@ -124,20 +141,26 @@ func RepoUpdate(t *testing.T, c Constructor) {
 	repo, stored := setupMutation(t, c)
 	id := stored[0].ID
 	name := "asddsa"
-	aut := book.Author{Name: "authorC"}
-	cat := []book.Category{{Name: "catC"}}
-	replaced, err := repo.Update(ctx, book.Book{
+	_, err := repo.Update(ctx, book.Book{
 		ID:         id,
 		Name:       name,
-		Author:     aut,
-		Categories: cat,
+		Author:     aut2,
+		Categories: []book.Category{cat1, cat2},
 	})
 	if err != nil {
-		t.Errorf("Error while updating item: %s", err)
+		t.Fatalf("Error while updating item: %s", err)
 	}
+	b, err := repo.Get(ctx, 0, 1, book.Query{ID: id})
+	if err != nil {
+		t.Fatalf("Error while getting item: %s", err)
+	}
+	if len(b) != 1 {
+		t.Fatalf("Failed to get updated item")
+	}
+	replaced := b[0]
 	if replaced.Name != name ||
-		replaced.Author.Name != aut.Name ||
-		replaced.Categories[0].Name != cat[0].Name {
+		replaced.Author.ID != aut2.ID ||
+		len(replaced.Categories) != 2 {
 		t.Errorf("Expected to update item with data")
 	}
 }
@@ -176,20 +199,18 @@ func RepoUpdateWithSomeDeleted(t *testing.T, c Constructor) {
 		}
 	}
 	name := "asddsa"
-	aut := book.Author{Name: "authorC"}
-	cat := []book.Category{{Name: "catC"}}
 	replaced, err := repo.Update(ctx, book.Book{
 		ID:         item.ID,
 		Name:       name,
-		Author:     aut,
-		Categories: cat,
+		Author:     aut2,
+		Categories: []book.Category{cat2},
 	})
 	if err != nil {
 		t.Errorf("Error while updating item with some deleted: %s", err)
 	}
 	if replaced.Name != name ||
-		replaced.Author.Name != aut.Name ||
-		replaced.Categories[0].Name != cat[0].Name {
+		replaced.Author.ID != aut2.ID ||
+		replaced.Categories[0].ID != cat2.ID {
 		t.Errorf("Expected to update item with data")
 	}
 }
@@ -200,7 +221,14 @@ func RepoDelete(t *testing.T, c Constructor) {
 	for _, item := range stored {
 		_, err := repo.Delete(ctx, item.ID)
 		if err != nil {
-			t.Errorf("Error while deleting item: %s", err)
+			t.Fatalf("Error while deleting item: %s", err)
+		}
+		b, err := repo.Get(ctx, 0, 1, book.Query{ID: item.ID})
+		if err != nil {
+			t.Fatalf("Error while getting item: %s", err)
+		}
+		if len(b) != 0 {
+			t.Error("Did not expect to get deleted item")
 		}
 	}
 }
@@ -233,22 +261,26 @@ func setup(t *testing.T, c Constructor) bookrepo.Repository {
 	authorRepo, categoryRepo, repo := c(t)
 
 	var err error
-	exAuthor, err = authorRepo.Create(ctx, author.CreateDTO{Name: "authorB"})
+	aut1, err = authorRepo.Create(ctx, author.CreateDTO{Name: "authorA"})
 	if err != nil {
 		t.Fatal("Error in setup: failed to create author")
 	}
-	exCategory, err = categoryRepo.Create(ctx, category.CreateDTO{Name: "catB"})
+	aut2, err = authorRepo.Create(ctx, author.CreateDTO{Name: "authorB"})
+	if err != nil {
+		t.Fatal("Error in setup: failed to create author")
+	}
+	cat1, err = categoryRepo.Create(ctx, category.CreateDTO{Name: "catA"})
 	if err != nil {
 		t.Fatal("Error in setup: failed to create category")
 	}
-	books[1].Author = book.Author{
-		ID:   exAuthor.ID,
-		Name: exAuthor.Name,
+	cat2, err = categoryRepo.Create(ctx, category.CreateDTO{Name: "catB"})
+	if err != nil {
+		t.Fatal("Error in setup: failed to create category")
 	}
-	books[1].Categories[1] = book.Category{
-		ID:   exCategory.ID,
-		Name: exCategory.Name,
-	}
+	books[0].Author = aut1
+	books[0].Categories = []book.Category{cat1}
+	books[1].Author = aut2
+	books[1].Categories = []book.Category{cat1, cat2}
 
 	for _, a := range books {
 		_, err := repo.Create(ctx, a)
