@@ -1,0 +1,157 @@
+basePath: /
+definitions:
+  catalog.Author:
+    properties:
+      id:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+    type: object
+  catalog.Book:
+    properties:
+      author:
+        $ref: '#/definitions/catalog.Author'
+      categories:
+        items:
+          $ref: '#/definitions/catalog.Category'
+        type: array
+      id:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+    type: object
+  catalog.BookCreateDTO:
+    properties:
+      author:
+        items:
+          type: integer
+        type: array
+      categories:
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+      name:
+        type: string
+    type: object
+  catalog.BooksQuery:
+    properties:
+      author:
+        items:
+          type: integer
+        type: array
+      categories:
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+      count:
+        type: integer
+      from:
+        type: integer
+      id:
+        items:
+          type: integer
+        type: array
+    type: object
+  catalog.Category:
+    properties:
+      id:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      parentId:
+        items:
+          type: integer
+        type: array
+    type: object
+host: localhost:8001
+info:
+  contact:
+    email: dmitry@vesnin.work
+    name: Dimas
+    url: https://github.com/Vesninovich
+  description: Service for creating and quering books catalog
+  license:
+    name: ISC
+    url: https://www.isc.org/licenses/
+  title: Book Store Catalog Service
+  version: "0.0"
+paths:
+  /book:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        get books according to query
+        if book ID is provided, only this book is returned (obviously)
+      parameters:
+      - description: book query
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/catalog.BooksQuery'
+      produces:
+      - application/x-json-stream
+      responses:
+        "200":
+          description: books found according to query
+          schema:
+            $ref: '#/definitions/catalog.Book'
+        "400":
+          description: bad query, e. g. malformed uuid
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: query books
+      tags:
+      - Book
+    post:
+      consumes:
+      - application/json
+      description: add new book to catalog
+      parameters:
+      - description: book data
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/catalog.BookCreateDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: created book
+          schema:
+            $ref: '#/definitions/catalog.Book'
+        "400":
+          description: bad data
+          schema:
+            type: string
+        "404":
+          description: some data in book not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: create book
+      tags:
+      - Book
+swagger: "2.0"
+tags:
+- description: Quering and creating books
+  name: Book

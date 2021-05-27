@@ -18,6 +18,23 @@ import (
 	"google.golang.org/grpc"
 )
 
+// @title Book Store Catalog Service
+// @version 0.0
+// @description Service for creating and quering books catalog
+
+// @contact.name Dimas
+// @contact.url https://github.com/Vesninovich
+// @contact.email dmitry@vesnin.work
+
+// @license.name ISC
+// @license.url https://www.isc.org/licenses/
+
+// @host localhost:8001
+// @BasePath /
+
+// @tag.name Book
+// @tag.description Quering and creating books
+
 const dbURL = "postgresql://gobookstorecatalog@localhost:5432/gobookstore"
 const schema = "catalog"
 

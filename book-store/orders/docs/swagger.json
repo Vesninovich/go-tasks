@@ -1,0 +1,176 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Service for placing and reading book orders",
+        "title": "Book Store Orders Service",
+        "contact": {
+            "name": "Dimas",
+            "url": "https://github.com/Vesninovich",
+            "email": "dmitry@vesnin.work"
+        },
+        "license": {
+            "name": "ISC",
+            "url": "https://www.isc.org/licenses/"
+        },
+        "version": "0.0"
+    },
+    "host": "localhost:8002",
+    "basePath": "/",
+    "paths": {
+        "/order": {
+            "get": {
+                "description": "get order by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "get order",
+                "parameters": [
+                    {
+                        "description": "order id",
+                        "name": "id",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orders.OrderID"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "requested order",
+                        "schema": {
+                            "$ref": "#/definitions/orders.Order"
+                        }
+                    },
+                    "400": {
+                        "description": "malformed id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "requested order not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "place new book order",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "place order",
+                "parameters": [
+                    {
+                        "description": "order data",
+                        "name": "order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/orders.OrderCreateDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "created order",
+                        "schema": {
+                            "$ref": "#/definitions/orders.Order"
+                        }
+                    },
+                    "400": {
+                        "description": "malformed book id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "requested book not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "orders.Order": {
+            "type": "object",
+            "properties": {
+                "book": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "orders.OrderCreateDTO": {
+            "type": "object",
+            "properties": {
+                "book": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "orders.OrderID": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "description": "Requesting and placing orders",
+            "name": "Order"
+        }
+    ]
+}
