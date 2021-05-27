@@ -25,10 +25,10 @@ func (s *Service) GetCategory(ctx context.Context, id uuid.UUID) (book.Category,
 }
 
 // CreateCategory validates data, creates category if data is valid and saves it, returns error otherwise.
-func (s *Service) CreateCategory(ctx context.Context, name string) (book.Category, error) {
+func (s *Service) CreateCategory(ctx context.Context, name string, parentID uuid.UUID) (book.Category, error) {
 	var empty book.Category
 	if name == "" {
 		return empty, &commonerrors.InvalidInput{Reason: "name is required"}
 	}
-	return s.repo.Create(ctx, category.CreateDTO{Name: name})
+	return s.repo.Create(ctx, category.CreateDTO{Name: name, ParentID: parentID})
 }

@@ -46,39 +46,51 @@ func TestCreateBook(t *testing.T) {
 	client := pb.NewCatalogClient(conn)
 
 	_, err = client.CreateBook(ctx, &catalog.BookCreateDTO{
-		Name:   "Test",
-		Author: aut.ID[:],
-		Categories: [][]byte{
-			cats[0].ID[:],
-			cats[1].ID[:],
+		Name: "Test",
+		Author: &catalog.Author{
+			Id:   aut.ID[:],
+			Name: aut.Name,
+		},
+		Categories: []*catalog.Category{
+			{Id: cats[0].ID[:], Name: cats[0].Name},
+			{Id: cats[1].ID[:], Name: cats[1].Name},
 		},
 	})
 	if err != nil {
-		t.Errorf("Failed to create valid book: %s", err)
+		t.Fatalf("Failed to create valid book: %s", err)
 	}
 
 	_, err = client.CreateBook(ctx, &catalog.BookCreateDTO{
-		Name:   "Test",
-		Author: aut.ID[:],
+		Name: "Test",
+		Author: &catalog.Author{
+			Id:   aut.ID[:],
+			Name: aut.Name,
+		},
 	})
 	if err != nil {
-		t.Errorf("Failed to create valid book with no categories: %s", err)
+		t.Fatalf("Failed to create valid book with no categories: %s", err)
 	}
 
 	_, err = client.CreateBook(ctx, &catalog.BookCreateDTO{
-		Name:   "Test",
-		Author: append(aut.ID[:], 0),
+		Name: "Test",
+		Author: &catalog.Author{
+			Id:   append(aut.ID[:], 0),
+			Name: aut.Name,
+		},
 	})
 	if err == nil {
 		t.Error("Expected to get error for invalid author UUID")
 	}
 
 	_, err = client.CreateBook(ctx, &catalog.BookCreateDTO{
-		Name:   "Test",
-		Author: aut.ID[:],
-		Categories: [][]byte{
-			cats[0].ID[:],
-			append(cats[1].ID[:], 0),
+		Name: "Test",
+		Author: &catalog.Author{
+			Id:   aut.ID[:],
+			Name: aut.Name,
+		},
+		Categories: []*catalog.Category{
+			{Id: cats[0].ID[:], Name: cats[0].Name},
+			{Id: append(cats[1].ID[:], 0), Name: cats[1].Name},
 		},
 	})
 	if err == nil {
@@ -102,64 +114,88 @@ func TestGetBooks(t *testing.T) {
 		t.Fatalf("Failed to create author: %s", err)
 	}
 	b0, err := client.CreateBook(ctx, &catalog.BookCreateDTO{
-		Name:   "TestA",
-		Author: a.ID[:],
-	})
-	if err != nil {
-		t.Errorf("Failed to create valid book: %s", err)
-	}
-	b0ID, err := uuid.FromBytes(b0.Id)
-	if err != nil {
-		t.Errorf("Failed to read uuid of book: %s", err)
-	}
-	b1, err := client.CreateBook(ctx, &catalog.BookCreateDTO{
-		Name:   "TestB",
-		Author: aut.ID[:],
-		Categories: [][]byte{
-			cats[0].ID[:],
-			cats[1].ID[:],
+		Name: "TestA",
+		Author: &catalog.Author{
+			Id:   a.ID[:],
+			Name: a.Name,
 		},
 	})
 	if err != nil {
-		t.Errorf("Failed to create valid book: %s", err)
+		t.Fatalf("Failed to create valid book: %s", err)
+	}
+	b0ID, err := uuid.FromBytes(b0.Id)
+	if err != nil {
+		t.Fatalf("Failed to read uuid of book: %s", err)
+	}
+	b1, err := client.CreateBook(ctx, &catalog.BookCreateDTO{
+		Name: "TestB",
+		Author: &catalog.Author{
+			Id:   aut.ID[:],
+			Name: aut.Name,
+		},
+		Categories: []*catalog.Category{
+			{Id: cats[0].ID[:], Name: cats[0].Name},
+			{Id: cats[1].ID[:], Name: cats[1].Name},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Failed to create valid book: %s", err)
 	}
 	b1ID, err := uuid.FromBytes(b1.Id)
 	if err != nil {
-		t.Errorf("Failed to read uuid of book: %s", err)
+		t.Fatalf("Failed to read uuid of book: %s", err)
 	}
 	//
 
-	_, err = client.GetBooks(ctx, &pb.BooksQuery{})
+	stream, err := client.GetBooks(ctx, &pb.BooksQuery{})
 	if err != nil {
-		t.Errorf("Failed to get books with empty query: %s", err)
-	}
-
-	zero := uint32(0)
-	one := uint32(1)
-	two := uint32(2)
-	stream, err := client.GetBooks(ctx, &pb.BooksQuery{
-		From:   &zero,
-		Count:  &one,
-		Author: a.ID[:],
-	})
-	if err != nil {
-		t.Errorf("Failed to get books: %s", err)
+		t.Fatalf("Failed to get books with empty query: %s", err)
 	}
 	count := 0
 	for {
 		b, err := stream.Recv()
 		if err == io.EOF {
-			if count != 1 {
-				t.Errorf("Wrong number of books read, expected 1, got %d", count)
+			if count != 2 {
+				t.Fatalf("Wrong number of books read, expected 2, got %d", count)
 			}
 			break
 		}
 		if err != nil {
-			t.Errorf("Failed to read book from stream: %s", err)
+			t.Fatalf("Failed to read book from stream: %s", err)
+		}
+		_, err = uuid.FromBytes(b.Id)
+		if err != nil {
+			t.Fatalf("Failed to get uuid of book: %s", err)
+		}
+		count++
+	}
+
+	zero := uint32(0)
+	one := uint32(1)
+	two := uint32(2)
+	stream, err = client.GetBooks(ctx, &pb.BooksQuery{
+		From:   &zero,
+		Count:  &one,
+		Author: a.ID[:],
+	})
+	if err != nil {
+		t.Fatalf("Failed to get books: %s", err)
+	}
+	count = 0
+	for {
+		b, err := stream.Recv()
+		if err == io.EOF {
+			if count != 1 {
+				t.Fatalf("Wrong number of books read, expected 1, got %d", count)
+			}
+			break
+		}
+		if err != nil {
+			t.Fatalf("Failed to read book from stream: %s", err)
 		}
 		id, err := uuid.FromBytes(b.Id)
 		if err != nil {
-			t.Errorf("Failed to get uuid of book: %s", err)
+			t.Fatalf("Failed to get uuid of book: %s", err)
 		}
 		if id != b0ID {
 			t.Errorf("Got wrong book")
@@ -173,23 +209,23 @@ func TestGetBooks(t *testing.T) {
 		Categories: [][]byte{cats[1].ID[:]},
 	})
 	if err != nil {
-		t.Errorf("Failed to get books: %s", err)
+		t.Fatalf("Failed to get books: %s", err)
 	}
 	count = 0
 	for {
 		b, err := stream.Recv()
 		if err == io.EOF {
 			if count != 1 {
-				t.Errorf("Wrong number of books read, expected 1, got %d", count)
+				t.Fatalf("Wrong number of books read, expected 1, got %d", count)
 			}
 			break
 		}
 		if err != nil {
-			t.Errorf("Failed to read book from stream: %s", err)
+			t.Fatalf("Failed to read book from stream: %s", err)
 		}
 		id, err := uuid.FromBytes(b.Id)
 		if err != nil {
-			t.Errorf("Failed to get uuid of book: %s", err)
+			t.Fatalf("Failed to get uuid of book: %s", err)
 		}
 		if id != b1ID {
 			t.Errorf("Got wrong book")
@@ -203,23 +239,23 @@ func TestGetBooks(t *testing.T) {
 		Id:    b1.Id,
 	})
 	if err != nil {
-		t.Errorf("Failed to get books: %s", err)
+		t.Fatalf("Failed to get books: %s", err)
 	}
 	count = 0
 	for {
 		b, err := stream.Recv()
 		if err == io.EOF {
 			if count != 1 {
-				t.Errorf("Wrong number of books read, expected 1, got %d", count)
+				t.Fatalf("Wrong number of books read, expected 1, got %d", count)
 			}
 			break
 		}
 		if err != nil {
-			t.Errorf("Failed to read book from stream: %s", err)
+			t.Fatalf("Failed to read book from stream: %s", err)
 		}
 		id, err := uuid.FromBytes(b.Id)
 		if err != nil {
-			t.Errorf("Failed to get uuid of book: %s", err)
+			t.Fatalf("Failed to get uuid of book: %s", err)
 		}
 		if id != b1ID {
 			t.Errorf("Got wrong book")
@@ -241,11 +277,11 @@ func setup(t *testing.T) *grpc.Server {
 	if err != nil {
 		t.Fatalf("Failed to create author: %s", err)
 	}
-	cats[0], err = cs.CreateCategory(ctx, "TestC1")
+	cats[0], err = cs.CreateCategory(ctx, "TestC1", uuid.UUID{})
 	if err != nil {
 		t.Fatalf("Failed to create category: %s", err)
 	}
-	cats[1], err = cs.CreateCategory(ctx, "TestC2")
+	cats[1], err = cs.CreateCategory(ctx, "TestC2", uuid.UUID{})
 	if err != nil {
 		t.Fatalf("Failed to create category: %s", err)
 	}

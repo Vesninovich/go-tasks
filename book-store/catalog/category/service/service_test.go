@@ -7,11 +7,12 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/catalog/category/inmemory"
 	categoryservice "github.com/Vesninovich/go-tasks/book-store/catalog/category/service"
 	"github.com/Vesninovich/go-tasks/book-store/common/commonerrors"
+	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 )
 
 func TestCreateValid(t *testing.T) {
 	s := createService()
-	_, err := s.CreateCategory(context.Background(), "test")
+	_, err := s.CreateCategory(context.Background(), "test", uuid.UUID{})
 	if err != nil {
 		t.Errorf("Got error while creating valid category: %s", err)
 	}
@@ -19,7 +20,7 @@ func TestCreateValid(t *testing.T) {
 
 func TestCreateWithEmptyName(t *testing.T) {
 	s := createService()
-	_, err := s.CreateCategory(context.Background(), "")
+	_, err := s.CreateCategory(context.Background(), "", uuid.UUID{})
 	if err == nil {
 		t.Error("Expected to get error while creating category with empty name")
 	}

@@ -29,8 +29,8 @@ message Category {
 
 message BookCreateDTO {
   string name = 1;
-  bytes author = 2;
-  repeated bytes categories = 3;
+  Author author = 2;
+  repeated Category categories = 3;
 }
 
 message BooksQuery {
