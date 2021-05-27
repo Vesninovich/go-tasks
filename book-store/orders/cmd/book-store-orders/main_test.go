@@ -31,6 +31,8 @@ const bufsize = 1024 * 1024
 var lis *bufconn.Listener
 var ctx = context.Background()
 var client orders.OrdersClient
+var cc catalog.CatalogClient
+var bk *catalog.Book
 
 // TestMain tests
 func TestMain(m *testing.M) {
@@ -41,7 +43,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Failed to connect to catalog service on %s: %s", catalogURL, err)
 	}
 
-	cc := catalog.NewCatalogClient(cConn)
+	cc = catalog.NewCatalogClient(cConn)
 	c := catalogservice.New(cc)
 	s := orderservice.New(r, c)
 
@@ -71,14 +73,19 @@ func TestMain(m *testing.M) {
 }
 
 func TestOrders(t *testing.T) {
-	// aID, _ := uuid.FromString("15f76b4d-3ccb-417a-817c-c3a98e40ba34")
-	bID, err := uuid.FromString("5d9644cd-6be5-41f2-97d3-15ecd509568a")
+	var err error
+	bk, err := cc.CreateBook(ctx, &catalog.BookCreateDTO{
+		Name: "test book",
+		Author: &catalog.Author{
+			Name: "test author",
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	created, err := client.CreateOrder(context.Background(), &orders.OrderCreateDTO{
 		Description: "Test order",
-		Book:        bID[:],
+		Book:        bk.Id,
 	})
 	if err != nil {
 		t.Fatal(err)
