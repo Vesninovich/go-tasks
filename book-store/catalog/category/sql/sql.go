@@ -13,20 +13,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Table of categories
-const Table = `
-CREATE TABLE IF NOT EXISTS categories(
-  id uuid PRIMARY KEY,
-  name text NOT NULL,
-	parent_id uuid REFERENCES categories DEFAULT NULL,
-  created_at timestamp,
-  updated_at timestamp,
-  deleted_at timestamp
-);`
-
 // Repository provides access to relational DB storage of tasks
 type Repository struct {
-	db *sqlx.DB
+	db     *sqlx.DB
+	schema string
 }
 
 type fromDB struct {
@@ -36,14 +26,26 @@ type fromDB struct {
 }
 
 // New creates a new instance of SQLRepository
-func New(db *sqlx.DB) *Repository {
-	return &Repository{db}
+func New(db *sqlx.DB, schema string) *Repository {
+	return &Repository{db, schema}
+}
+
+// CreateTableStmt of categories
+func (r *Repository) CreateTableStmt() string {
+	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %[1]s.categories(
+  id uuid PRIMARY KEY,
+  name text NOT NULL,
+	parent_id uuid REFERENCES %[1]s.categories DEFAULT NULL,
+  created_at timestamp,
+  updated_at timestamp,
+  deleted_at timestamp
+);`, r.schema)
 }
 
 // GetAll gets all non-deleted categories
 func (r *Repository) GetAll(ctx context.Context) (categories []book.Category, err error) {
 	data := []fromDB{}
-	err = r.db.SelectContext(ctx, &data, "SELECT id, name, parent_id FROM categories WHERE deleted_at=$1;", time.Time{})
+	err = r.db.SelectContext(ctx, &data, fmt.Sprintf("SELECT id, name, parent_id FROM %s.categories WHERE deleted_at=$1;", r.schema), time.Time{})
 	if err != nil {
 		return
 	}
@@ -73,7 +75,7 @@ func (r *Repository) GetAll(ctx context.Context) (categories []book.Category, er
 func (r *Repository) Get(ctx context.Context, id uuid.UUID) (book.Category, error) {
 	a := fromDB{}
 	err := r.db.GetContext(
-		ctx, &a, "SELECT id, name, parent_id FROM categories WHERE id=$1 AND deleted_at=$2;", id.String(), time.Time{},
+		ctx, &a, fmt.Sprintf("SELECT id, name, parent_id FROM %s.categories WHERE id=$1 AND deleted_at=$2;", r.schema), id.String(), time.Time{},
 	)
 	if err == sql.ErrNoRows {
 		return book.Category{}, &commonerrors.NotFound{What: fmt.Sprintf("Category with ID %s", id)}
@@ -99,8 +101,8 @@ func (r *Repository) Create(ctx context.Context, dto category.CreateDTO) (book.C
 	}
 	_, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO categories (id, name, parent_id, created_at, updated_at, deleted_at)
-			VALUES ($1, $2, $3, $4, $5, $6)`,
+		fmt.Sprintf(`INSERT INTO %s.categories (id, name, parent_id, created_at, updated_at, deleted_at)
+			VALUES ($1, $2, $3, $4, $5, $6)`, r.schema),
 		id.String(), dto.Name, parentID, time.Now(), time.Time{}, time.Time{},
 	)
 	return book.Category{ID: id, Name: dto.Name, ParentID: dto.ParentID}, err
@@ -115,9 +117,9 @@ func (r *Repository) Update(ctx context.Context, dto book.Category) (book.Catego
 	}
 	res, err := r.db.ExecContext(
 		ctx,
-		`UPDATE categories
+		fmt.Sprintf(`UPDATE %s.categories
 			SET name=$4, parent_id=$5, updated_at=$3
-			WHERE id=$1 AND deleted_at=$2;`,
+			WHERE id=$1 AND deleted_at=$2;`, r.schema),
 		dto.ID.String(), time.Time{}, time.Now(), dto.Name, parentID,
 	)
 	if err != nil {
@@ -138,7 +140,7 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Category, e
 	var a fromDB
 	err := r.db.QueryRowxContext(
 		ctx,
-		`SELECT id, name, parent_id FROM categories WHERE id=$1 AND deleted_at=$2;`,
+		fmt.Sprintf(`SELECT id, name, parent_id FROM %s.categories WHERE id=$1 AND deleted_at=$2;`, r.schema),
 		id.String(), time.Time{},
 	).Scan(&a.ID, &a.Name, &a.ParentID)
 	if err == sql.ErrNoRows {
@@ -149,9 +151,9 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Category, e
 	}
 	res, err := r.db.ExecContext(
 		ctx,
-		`UPDATE categories
+		fmt.Sprintf(`UPDATE %s.categories
 			SET deleted_at=$2
-			WHERE id=$1 AND deleted_at=$3;`,
+			WHERE id=$1 AND deleted_at=$3;`, r.schema),
 		id.String(), time.Now(), time.Time{},
 	)
 	if err != nil {

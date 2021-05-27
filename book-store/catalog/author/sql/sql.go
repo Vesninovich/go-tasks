@@ -13,19 +13,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Table of authors
-const Table = `
-CREATE TABLE IF NOT EXISTS authors(
-  id uuid PRIMARY KEY,
-  name text NOT NULL,
-  created_at timestamp,
-  updated_at timestamp,
-  deleted_at timestamp
-);`
-
 // Repository provides access to relational DB storage of tasks
 type Repository struct {
-	db *sqlx.DB
+	db     *sqlx.DB
+	schema string
 }
 
 type fromDB struct {
@@ -34,14 +25,25 @@ type fromDB struct {
 }
 
 // New creates a new instance of SQLRepository
-func New(db *sqlx.DB) *Repository {
-	return &Repository{db}
+func New(db *sqlx.DB, schema string) *Repository {
+	return &Repository{db, schema}
+}
+
+// CreateTableStmt of authors
+func (r *Repository) CreateTableStmt() string {
+	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.authors(
+  id uuid PRIMARY KEY,
+  name text NOT NULL,
+  created_at timestamp,
+  updated_at timestamp,
+  deleted_at timestamp
+);`, r.schema)
 }
 
 // GetAll gets all non-deleted authors
 func (r *Repository) GetAll(ctx context.Context) (authors []book.Author, err error) {
 	data := []fromDB{}
-	err = r.db.SelectContext(ctx, &data, "SELECT id, name FROM authors WHERE deleted_at=$1;", time.Time{})
+	err = r.db.SelectContext(ctx, &data, fmt.Sprintf("SELECT id, name FROM %s.authors WHERE deleted_at=$1;", r.schema), time.Time{})
 	if err != nil {
 		return
 	}
@@ -64,7 +66,7 @@ func (r *Repository) GetAll(ctx context.Context) (authors []book.Author, err err
 func (r *Repository) Get(ctx context.Context, id uuid.UUID) (book.Author, error) {
 	a := fromDB{}
 	err := r.db.GetContext(
-		ctx, &a, "SELECT id, name FROM authors WHERE id=$1 AND deleted_at=$2;", id.String(), time.Time{},
+		ctx, &a, fmt.Sprintf("SELECT id, name FROM %s.authors WHERE id=$1 AND deleted_at=$2;", r.schema), id.String(), time.Time{},
 	)
 	if err == sql.ErrNoRows {
 		return book.Author{}, &commonerrors.NotFound{What: fmt.Sprintf("Author with ID %s", id)}
@@ -81,8 +83,8 @@ func (r *Repository) Create(ctx context.Context, dto author.CreateDTO) (book.Aut
 	id := uuid.New()
 	_, err := r.db.ExecContext(
 		ctx,
-		`INSERT INTO authors (id, name, created_at, updated_at, deleted_at)
-			VALUES ($1, $2, $3, $4, $5)`,
+		fmt.Sprintf(`INSERT INTO %s.authors (id, name, created_at, updated_at, deleted_at)
+			VALUES ($1, $2, $3, $4, $5)`, r.schema),
 		id.String(), dto.Name, time.Now(), time.Time{}, time.Time{},
 	)
 	return book.Author{ID: id, Name: dto.Name}, err
@@ -92,9 +94,9 @@ func (r *Repository) Create(ctx context.Context, dto author.CreateDTO) (book.Aut
 func (r *Repository) Update(ctx context.Context, dto book.Author) (book.Author, error) {
 	res, err := r.db.ExecContext(
 		ctx,
-		`UPDATE authors
+		fmt.Sprintf(`UPDATE %s.authors
 			SET name=$3, updated_at=$4
-			WHERE id=$1 AND deleted_at=$2;`,
+			WHERE id=$1 AND deleted_at=$2;`, r.schema),
 		dto.ID.String(), time.Time{}, dto.Name, time.Now(),
 	)
 	if err != nil {
@@ -115,7 +117,7 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Author, err
 	var a fromDB
 	err := r.db.QueryRowxContext(
 		ctx,
-		`SELECT id, name FROM authors WHERE id=$1 AND deleted_at=$2;`,
+		fmt.Sprintf(`SELECT id, name FROM %s.authors WHERE id=$1 AND deleted_at=$2;`, r.schema),
 		id.String(), time.Time{},
 	).Scan(&a.ID, &a.Name)
 	if err == sql.ErrNoRows {
@@ -126,9 +128,9 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Author, err
 	}
 	res, err := r.db.ExecContext(
 		ctx,
-		`UPDATE authors
+		fmt.Sprintf(`UPDATE %s.authors
 			SET deleted_at=$2
-			WHERE id=$1 AND deleted_at=$3;`,
+			WHERE id=$1 AND deleted_at=$3;`, r.schema),
 		id.String(), time.Now(), time.Time{},
 	)
 	if err != nil {

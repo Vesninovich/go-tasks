@@ -3,6 +3,7 @@
 package sql_test
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -19,6 +20,7 @@ import (
 )
 
 const dbURL = "postgresql://gobookstorecatalog@localhost:5432/gobookstore"
+const schema = "catalog_books_test"
 
 var db *sqlx.DB
 
@@ -29,30 +31,31 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Failed to connect to DB at URL %s\n%s", dbURL, err)
 	}
 	defer db.Close()
-	log.Println(authorsql.Table)
-	db.MustExec(authorsql.Table)
-	log.Println(categorysql.Table)
-	db.MustExec(categorysql.Table)
-	log.Println(booksql.Table)
-	db.MustExec(booksql.Table)
+	db.MustExec("CREATE SCHEMA IF NOT EXISTS " + schema)
+	a := authorsql.New(db, schema)
+	log.Println(a.CreateTableStmt())
+	db.MustExec(a.CreateTableStmt())
+	c := categorysql.New(db, schema)
+	log.Println(c.CreateTableStmt())
+	db.MustExec(c.CreateTableStmt())
+	b := booksql.New(db, schema)
+	log.Println(b.CreateTableStmt())
+	db.MustExec(b.CreateTableStmt())
 	res := m.Run()
-	db.MustExec("DROP TABLE books_categories;")
-	db.MustExec("DROP TABLE books;")
-	db.MustExec("DROP TABLE categories;")
-	db.MustExec("DROP TABLE authors;")
+	db.MustExec(fmt.Sprintf("DROP SCHEMA %s CASCADE;", schema))
 	os.Exit(res)
 }
 
 func constructor(t *testing.T) (author.Repository, category.Repository, bookrepo.Repository) {
 	t.Cleanup(clear)
-	return authorsql.New(db), categorysql.New(db), booksql.New(db)
+	return authorsql.New(db, schema), categorysql.New(db, schema), booksql.New(db, schema)
 }
 
 func clear() {
-	db.MustExec("DELETE FROM books_categories;")
-	db.MustExec("DELETE FROM books;")
-	db.MustExec("DELETE FROM categories;")
-	db.MustExec("DELETE FROM authors;")
+	db.MustExec(fmt.Sprintf("DELETE FROM %s.books_categories;", schema))
+	db.MustExec(fmt.Sprintf("DELETE FROM %s.books;", schema))
+	db.MustExec(fmt.Sprintf("DELETE FROM %s.categories;", schema))
+	db.MustExec(fmt.Sprintf("DELETE FROM %s.authors;", schema))
 }
 
 func TestGet(t *testing.T) {

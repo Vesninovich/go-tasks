@@ -14,26 +14,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Table of authors
-const Table = `
-CREATE TABLE IF NOT EXISTS books(
-  id uuid PRIMARY KEY,
-  name text NOT NULL,
-	author_id uuid REFERENCES authors,
-  created_at timestamp,
-  updated_at timestamp,
-  deleted_at timestamp
-);
-
-CREATE TABLE IF NOT EXISTS books_categories(
-	book_id uuid REFERENCES books ON DELETE CASCADE,
-	category_id uuid REFERENCES categories ON DELETE CASCADE,
-	PRIMARY KEY (book_id, category_id)
-);`
-
 // Repository provides access to relational DB storage of tasks
 type Repository struct {
-	db *sqlx.DB
+	db     *sqlx.DB
+	schema string
 }
 
 type fromDB struct {
@@ -51,15 +35,33 @@ type catsFromDB struct {
 }
 
 // New creates a new instance of SQLRepository
-func New(db *sqlx.DB) *Repository {
-	return &Repository{db}
+func New(db *sqlx.DB, schema string) *Repository {
+	return &Repository{db, schema}
+}
+
+// CreateTableStmt of books
+func (r *Repository) CreateTableStmt() string {
+	return fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %[1]s.books(
+  id uuid PRIMARY KEY,
+  name text NOT NULL,
+	author_id uuid REFERENCES %[1]s.authors,
+  created_at timestamp,
+  updated_at timestamp,
+  deleted_at timestamp
+);
+
+CREATE TABLE IF NOT EXISTS %[1]s.books_categories(
+	book_id uuid REFERENCES %[1]s.books ON DELETE CASCADE,
+	category_id uuid REFERENCES %[1]s.categories ON DELETE CASCADE,
+	PRIMARY KEY (book_id, category_id)
+);`, r.schema)
 }
 
 // Get gets
 func (r *Repository) Get(ctx context.Context, from, count uint, query book.Query) ([]book.Book, error) {
 	data := []fromDB{}
 	err := r.db.SelectContext(
-		ctx, &data, getSelectBooksStatement(from, count, query), time.Time{},
+		ctx, &data, r.getSelectBooksStatement(from, count, query), time.Time{},
 	)
 	if err != nil {
 		return nil, err
@@ -69,7 +71,7 @@ func (r *Repository) Get(ctx context.Context, from, count uint, query book.Query
 	}
 	catData := []catsFromDB{}
 	err = r.db.SelectContext(
-		ctx, &catData, getSelectCategoriesStatement(data), time.Time{},
+		ctx, &catData, r.getSelectCategoriesStatement(data), time.Time{},
 	)
 	if err == sql.ErrNoRows {
 		err = nil
@@ -81,36 +83,35 @@ func (r *Repository) Get(ctx context.Context, from, count uint, query book.Query
 }
 
 // TODO: rewrite to string builder or squirrel
-func getSelectBooksStatement(from, count uint, query book.Query) (stmt string) {
-	stmt = `SELECT
-		books.id as id,
-		books.name as name,
-		authors.id as author_id,
-		authors.name as author_name
-		FROM books `
-	stmt += `
-		INNER JOIN authors
-		ON (authors.id=books.author_id)`
+func (r *Repository) getSelectBooksStatement(from, count uint, query book.Query) (stmt string) {
+	stmt = fmt.Sprintf(`SELECT
+		b.id as id,
+		b.name as name,
+		a.id as author_id,
+		a.name as author_name
+		FROM %[1]s.books as b
+		INNER JOIN %[1]s.authors as a
+		ON (a.id=b.author_id)`, r.schema)
 	qStart := `
-		WHERE `
+		WHERE`
 	qCont := `
-		AND `
+		AND`
 	if !query.ID.IsZero() {
-		stmt += fmt.Sprintf(`%sbooks.id='%s'`, qStart, query.ID)
+		stmt += fmt.Sprintf(`%s b.id='%s'`, qStart, query.ID)
 		qStart = qCont
 	}
 	if !query.Author.IsZero() {
-		stmt += fmt.Sprintf(`%sbooks.author_id='%s'`, qStart, query.Author)
+		stmt += fmt.Sprintf(`%s b.author_id='%s'`, qStart, query.Author)
 		qStart = qCont
 	}
 	if len(query.Categories) != 0 {
 		// is this portable?
-		stmt += fmt.Sprintf(`%sEXISTS (
+		stmt += fmt.Sprintf(`%s EXISTS (
 			SELECT 1
-			FROM books_categories as bc
-			WHERE bc.book_id=books.id
+			FROM %s.books_categories as bc
+			WHERE bc.book_id=b.id
 			AND bc.category_id IN (
-				'%s'`, qStart, query.Categories[0])
+				'%s'`, qStart, r.schema, query.Categories[0])
 		for _, c := range query.Categories[1:] {
 			stmt += fmt.Sprintf(`,
 				'%s'`, c)
@@ -120,7 +121,7 @@ func getSelectBooksStatement(from, count uint, query book.Query) (stmt string) {
 		)`
 		qStart = qCont
 	}
-	stmt += qStart + "books.deleted_at=$1 AND authors.deleted_at=$1"
+	stmt += qStart + " b.deleted_at=$1 AND a.deleted_at=$1"
 	if from != 0 && query.ID.IsZero() {
 		stmt += fmt.Sprintf(`
 		OFFSET %d`, from)
@@ -136,22 +137,22 @@ func getSelectBooksStatement(from, count uint, query book.Query) (stmt string) {
 	return
 }
 
-func getSelectCategoriesStatement(bookData []fromDB) (stmt string) {
+func (r *Repository) getSelectCategoriesStatement(bookData []fromDB) (stmt string) {
 	stmt = fmt.Sprintf(`SELECT
-		books.id as id,
-		categories.id as category_id,
-		categories.name as category_name,
-		categories.parent_id as category_parent_id
-		FROM books
-		INNER JOIN categories
+		b.id as id,
+		c.id as category_id,
+		c.name as category_name,
+		c.parent_id as category_parent_id
+		FROM %[1]s.books as b
+		INNER JOIN %[1]s.categories as c
 		ON EXISTS (
 	 		SELECT 1
-	 		FROM books_categories as bc
-		 	WHERE bc.book_id=books.id AND bc.category_id=category_id
+	 		FROM %[1]s.books_categories as bc
+		 	WHERE bc.book_id=b.id AND bc.category_id=category_id
 		)
-		WHERE categories.deleted_at=$1
-		AND books.id IN (
-			'%s'`, bookData[0].ID)
+		WHERE c.deleted_at=$1
+		AND b.id IN (
+			'%[2]s'`, r.schema, bookData[0].ID)
 	// is this portable?
 	for _, b := range bookData[1:] {
 		stmt += fmt.Sprintf(`,
@@ -228,8 +229,8 @@ func (r *Repository) Create(ctx context.Context, dto bookrepo.CreateDTO) (book.B
 	}
 	_, err = tx.ExecContext(
 		ctx,
-		`INSERT INTO books (id, name, author_id, created_at, updated_at, deleted_at)
-			VALUES ($1, $2, $3, $4, $5, $6)`,
+		fmt.Sprintf(`INSERT INTO %s.books (id, name, author_id, created_at, updated_at, deleted_at)
+			VALUES ($1, $2, $3, $4, $5, $6)`, r.schema),
 		idStr, dto.Name, dto.Author.ID.String(), time.Now(), time.Time{}, time.Time{},
 	)
 	if err != nil {
@@ -242,8 +243,8 @@ func (r *Repository) Create(ctx context.Context, dto bookrepo.CreateDTO) (book.B
 	for _, cat := range dto.Categories {
 		_, err := tx.ExecContext(
 			ctx,
-			`INSERT INTO books_categories (book_id, category_id)
-				VALUES ($1, $2)`,
+			fmt.Sprintf(`INSERT INTO %s.books_categories (book_id, category_id)
+				VALUES ($1, $2)`, r.schema),
 			idStr, cat.ID.String(),
 		)
 		if err != nil {
@@ -279,9 +280,9 @@ func (r *Repository) Update(ctx context.Context, dto book.Book) (b book.Book, er
 	}
 	_, err = tx.ExecContext(
 		ctx,
-		`UPDATE books
+		fmt.Sprintf(`UPDATE %s.books
 			SET name=$2, author_id=$3, updated_at=$4
-			WHERE id=$1`,
+			WHERE id=$1`, r.schema),
 		idStr, dto.Name, dto.Author.ID.String(), time.Now(),
 	)
 	if err != nil {
@@ -294,8 +295,8 @@ func (r *Repository) Update(ctx context.Context, dto book.Book) (b book.Book, er
 	if !catsEq {
 		_, err = tx.ExecContext(
 			ctx,
-			`DELETE FROM books_categories
-				WHERE book_id=$1`,
+			fmt.Sprintf(`DELETE FROM %s.books_categories
+				WHERE book_id=$1`, r.schema),
 			idStr,
 		)
 		if err != nil {
@@ -308,8 +309,8 @@ func (r *Repository) Update(ctx context.Context, dto book.Book) (b book.Book, er
 		for _, cat := range dto.Categories {
 			_, err := tx.ExecContext(
 				ctx,
-				`INSERT INTO books_categories (book_id, category_id)
-					VALUES ($1, $2)`,
+				fmt.Sprintf(`INSERT INTO %s.books_categories (book_id, category_id)
+					VALUES ($1, $2)`, r.schema),
 				idStr, cat.ID.String(),
 			)
 			if err != nil {
@@ -354,9 +355,9 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Book, error
 	}
 	_, err = tx.ExecContext(
 		ctx,
-		`UPDATE books
+		fmt.Sprintf(`UPDATE %s.books
 			SET deleted_at=$2
-			WHERE id=$1`,
+			WHERE id=$1`, r.schema),
 		idStr, time.Now(),
 	)
 	if err != nil {
@@ -368,8 +369,8 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) (book.Book, error
 	}
 	_, err = tx.ExecContext(
 		ctx,
-		`DELETE FROM books_categories
-			WHERE book_id=$1`,
+		fmt.Sprintf(`DELETE FROM %s.books_categories
+			WHERE book_id=$1`, r.schema),
 		idStr,
 	)
 	if err != nil {

@@ -4,6 +4,7 @@ package sql_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -16,6 +17,7 @@ import (
 )
 
 const dbURL = "postgresql://gobookstorecatalog@localhost:5432/gobookstore"
+const schema = "catalog_categories_test"
 
 var db *sqlx.DB
 
@@ -26,19 +28,22 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Failed to connect to DB at URL %s\n%s", dbURL, err)
 	}
 	defer db.Close()
-	db.MustExec(categorysql.Table)
+	db.MustExec("CREATE SCHEMA IF NOT EXISTS " + schema)
+	c := categorysql.New(db, schema)
+	log.Println(c.CreateTableStmt())
+	db.MustExec(c.CreateTableStmt())
 	res := m.Run()
-	db.MustExec("DROP TABLE categories;")
+	db.MustExec(fmt.Sprintf("DROP SCHEMA %s CASCADE;", schema))
 	os.Exit(res)
 }
 
 func constructor(t *testing.T) category.Repository {
 	t.Cleanup(clear)
-	return categorysql.New(db)
+	return categorysql.New(db, schema)
 }
 
 func clear() {
-	db.MustExecContext(context.Background(), "DELETE FROM categories;")
+	db.MustExecContext(context.Background(), fmt.Sprintf("DELETE FROM %s.categories;", schema))
 }
 
 func TestGetAll(t *testing.T) {
