@@ -82,16 +82,22 @@ func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooks
 // @Router /book [post]
 // TODO: check route
 func (s *Server) CreateBook(ctx context.Context, dto *catalog.BookCreateDTO) (*catalog.Book, error) {
-	autID, err := uuid.FromBytes(dto.Author.Id)
-	if err != nil {
-		return nil, err
-	}
-	cats := make([]book.Category, len(dto.Categories))
-	var cPID uuid.UUID
-	for i, cat := range dto.Categories {
-		cID, err := uuid.FromBytes(cat.Id)
+	var autID, cID, cPID uuid.UUID
+	var err error
+	if dto.Author.Id != nil {
+		autID, err = uuid.FromBytes(dto.Author.Id)
 		if err != nil {
 			return nil, err
+		}
+	}
+	cats := make([]book.Category, len(dto.Categories))
+	for i, cat := range dto.Categories {
+		cID = uuid.UUID{}
+		if cat.Id != nil {
+			cID, err = uuid.FromBytes(cat.Id)
+			if err != nil {
+				return nil, err
+			}
 		}
 		cPID = uuid.UUID{}
 		if cat.ParentId != nil {
