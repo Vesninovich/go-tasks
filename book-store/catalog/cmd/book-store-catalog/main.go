@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 
 	authorservice "github.com/Vesninovich/go-tasks/book-store/catalog/author/service"
 	authorsql "github.com/Vesninovich/go-tasks/book-store/catalog/author/sql"
@@ -12,6 +14,7 @@ import (
 	categoryservice "github.com/Vesninovich/go-tasks/book-store/catalog/category/service"
 	categorysql "github.com/Vesninovich/go-tasks/book-store/catalog/category/sql"
 	cataloggrpc "github.com/Vesninovich/go-tasks/book-store/catalog/grpc"
+	"github.com/Vesninovich/go-tasks/book-store/catalog/rest"
 	pb "github.com/Vesninovich/go-tasks/book-store/common/catalog"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -29,7 +32,7 @@ import (
 // @license.name ISC
 // @license.url https://www.isc.org/licenses/
 
-// @host localhost:8001
+// @host localhost:8002
 // @BasePath /
 
 // @tag.name Book
@@ -37,16 +40,18 @@ import (
 
 const dbURL = "postgresql://gobookstorecatalog@localhost:5432/gobookstore"
 const schema = "catalog"
+const grpcHost = "localhost:8001"
+const restHost = "localhost:8002"
 
 func main() {
 	db, ar, cr, br := initSQL()
 	defer db.Close()
 
-	lis, err := net.Listen("tcp", "localhost:8001")
+	lis, err := net.Listen("tcp", grpcHost)
 	if err != nil {
 		log.Fatalf("Failed to listen due to %s", err)
 	}
-	log.Println("Listening on localhost:8001")
+	log.Println("Listening on " + grpcHost)
 
 	grpcServer := grpc.NewServer()
 
@@ -56,7 +61,28 @@ func main() {
 
 	pb.RegisterCatalogServer(grpcServer, cataloggrpc.New(bs))
 	log.Println("Starting gRPC server")
-	grpcServer.Serve(lis)
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to start gRPC server: %s", err)
+		}
+	}()
+
+	restServer := rest.New(restHost, "/book", bs)
+	log.Println("Starting REST server on " + restHost)
+	go func() {
+		if err = restServer.Start(); err != nil {
+			log.Fatalf("Failed to start REST server: %s", err)
+		}
+	}()
+
+	// Run until interrupt
+	sig := make(chan os.Signal)
+	signal.Notify(sig, os.Interrupt)
+	<-sig
+	fmt.Println("SIGINT")
+	grpcServer.GracefulStop()
+	db.Close()
+	os.Exit(0)
 }
 
 func initSQL() (*sqlx.DB, *authorsql.Repository, *categorysql.Repository, *booksql.Repository) {

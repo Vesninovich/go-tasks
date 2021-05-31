@@ -40,6 +40,9 @@ func (s *BookService) CreateBook(ctx context.Context, name string, aut book.Auth
 		return book.Book{}, &commonerrors.InvalidInput{Reason: "name is required"}
 	}
 	if aut.ID.IsZero() {
+		if aut.Name == "" {
+			return book.Book{}, &commonerrors.InvalidInput{Reason: "author name is required"}
+		}
 		// TODO: optimize nested creation
 		a, err := s.authorService.CreateAuthor(ctx, aut.Name)
 		if err != nil {
@@ -55,6 +58,9 @@ func (s *BookService) CreateBook(ctx context.Context, name string, aut book.Auth
 	// TODO: optimize check and nested creation
 	for i, cat := range cats {
 		if cat.ID.IsZero() {
+			if cat.Name == "" {
+				return book.Book{}, &commonerrors.InvalidInput{Reason: "category name is required"}
+			}
 			c, err := s.categoryService.CreateCategory(ctx, cat.Name, cat.ParentID)
 			if err != nil {
 				return book.Book{}, err

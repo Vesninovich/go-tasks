@@ -24,18 +24,6 @@ func New(bookService *bookservice.BookService) *Server {
 }
 
 // GetBooks godoc
-// @Summary query books
-// @Description get books according to query
-// @Description if book ID is provided, only this book is returned (obviously)
-// @Tags Book
-// @Accept json
-// @Produce json-stream
-// @Param query body catalog.BooksQuery true "book query"
-// @Success 200 {object} catalog.Book "books found according to query"
-// @Failure 400 {string} string "bad query, e. g. malformed uuid"
-// @Failure 500 {string} string "internal error"
-// @Router /book [get]
-// TODO: check route
 func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooksServer) (err error) {
 	bookID, autID, catIDs, err := getUUIDs(q.Id, q.Author, q.Categories)
 	if err != nil {
@@ -67,20 +55,6 @@ func (s *Server) GetBooks(q *catalog.BooksQuery, stream catalog.Catalog_GetBooks
 }
 
 // CreateBook godoc
-// @Summary create book
-// @Description add new book to catalog
-// @Description if nested objects are new (that is, they do not have an ID yet), they are created
-// @Description if nested object has ID and it is not found, returns 404
-// @Tags Book
-// @Accept json
-// @Produce json
-// @Param book body catalog.BookCreateDTO true "book data"
-// @Success 200 {object} catalog.Book "created book"
-// @Failure 400 {string} string "bad data"
-// @Failure 404 {string} string "some data in book not found"
-// @Failure 500 {string} string "internal error"
-// @Router /book [post]
-// TODO: check route
 func (s *Server) CreateBook(ctx context.Context, dto *catalog.BookCreateDTO) (*catalog.Book, error) {
 	var autID, cID, cPID uuid.UUID
 	var err error

@@ -34,37 +34,61 @@ var doc = `{
     "paths": {
         "/book": {
             "get": {
-                "description": "get books according to query\nif book ID is provided, only this book is returned (obviously)",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "get books according to query",
                 "produces": [
-                    "application/x-json-stream"
+                    "application/json"
                 ],
                 "tags": [
                     "Book"
                 ],
-                "summary": "query books",
+                "summary": "get books",
                 "parameters": [
                     {
-                        "description": "book query",
-                        "name": "query",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/catalog.BooksQuery"
-                        }
+                        "type": "string",
+                        "description": "results start",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "results count",
+                        "name": "count",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "book id",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "author id",
+                        "name": "author",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "category ids",
+                        "name": "categories",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "books found according to query",
+                        "description": "results",
                         "schema": {
-                            "$ref": "#/definitions/catalog.Book"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_catalog_rest.apiModel"
+                            }
                         }
                     },
                     "400": {
-                        "description": "bad query, e. g. malformed uuid",
+                        "description": "malformed query",
                         "schema": {
                             "type": "string"
                         }
@@ -78,7 +102,7 @@ var doc = `{
                 }
             },
             "post": {
-                "description": "add new book to catalog\nif nested objects are new (that is, they do not have an ID yet), they are created\nif nested object has ID and it is not found, returns 404",
+                "description": "create book",
                 "consumes": [
                     "application/json"
                 ],
@@ -92,11 +116,11 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "book data",
-                        "name": "book",
+                        "name": "order",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/catalog.BookCreateDTO"
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_catalog_rest.createAPIModel"
                         }
                     }
                 ],
@@ -104,17 +128,17 @@ var doc = `{
                     "200": {
                         "description": "created book",
                         "schema": {
-                            "$ref": "#/definitions/catalog.Book"
+                            "$ref": "#/definitions/book.Book"
                         }
                     },
                     "400": {
-                        "description": "bad data",
+                        "description": "malformed data",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
-                        "description": "some data in book not found",
+                        "description": "nested author or category not found",
                         "schema": {
                             "type": "string"
                         }
@@ -130,109 +154,160 @@ var doc = `{
         }
     },
     "definitions": {
-        "catalog.Author": {
+        "book.Author": {
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
                 }
             }
         },
-        "catalog.Book": {
+        "book.Book": {
             "type": "object",
             "properties": {
                 "author": {
-                    "$ref": "#/definitions/catalog.Author"
+                    "$ref": "#/definitions/book.Author"
                 },
                 "categories": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/catalog.Category"
+                        "$ref": "#/definitions/book.Category"
                     }
                 },
                 "id": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
                 }
             }
         },
-        "catalog.BookCreateDTO": {
+        "book.Category": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parentID": {
+                    "type": "string"
+                }
+            }
+        },
+        "github.com_Vesninovich_go-tasks_book-store_catalog_rest.apiModel": {
             "type": "object",
             "properties": {
                 "author": {
-                    "$ref": "#/definitions/catalog.Author"
+                    "type": "string"
                 },
                 "categories": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/catalog.Category"
+                        "type": "string"
                     }
+                },
+                "id": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"
                 }
             }
         },
-        "catalog.BooksQuery": {
+        "github.com_Vesninovich_go-tasks_book-store_catalog_rest.createAPIModel": {
             "type": "object",
             "properties": {
                 "author": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "categories": {
-                    "type": "array",
-                    "items": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
                         }
                     }
                 },
-                "count": {
-                    "type": "integer"
-                },
-                "from": {
-                    "type": "integer"
-                },
-                "id": {
+                "categories": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
-                    }
-                }
-            }
-        },
-        "catalog.Category": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parentID": {
+                                "type": "string"
+                            }
+                        }
                     }
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "rest.apiModel": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
                 },
-                "parentId": {
+                "categories": {
                     "type": "array",
                     "items": {
-                        "type": "integer"
+                        "type": "string"
                     }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "rest.createAPIModel": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "parentID": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         }
@@ -257,7 +332,7 @@ type swaggerInfo struct {
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
 	Version:     "0.0",
-	Host:        "localhost:8001",
+	Host:        "localhost:8002",
 	BasePath:    "/",
 	Schemes:     []string{},
 	Title:       "Book Store Catalog Service",

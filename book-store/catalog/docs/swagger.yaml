@@ -1,75 +1,107 @@
 basePath: /
 definitions:
-  catalog.Author:
+  book.Author:
     properties:
       id:
-        items:
-          type: integer
-        type: array
+        type: string
       name:
         type: string
     type: object
-  catalog.Book:
+  book.Book:
     properties:
       author:
-        $ref: '#/definitions/catalog.Author'
+        $ref: '#/definitions/book.Author'
       categories:
         items:
-          $ref: '#/definitions/catalog.Category'
+          $ref: '#/definitions/book.Category'
         type: array
       id:
-        items:
-          type: integer
-        type: array
+        type: string
       name:
         type: string
     type: object
-  catalog.BookCreateDTO:
+  book.Category:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      parentID:
+        type: string
+    type: object
+  github.com_Vesninovich_go-tasks_book-store_catalog_rest.apiModel:
     properties:
       author:
-        $ref: '#/definitions/catalog.Author'
+        type: string
       categories:
         items:
-          $ref: '#/definitions/catalog.Category'
+          type: string
         type: array
+      id:
+        type: string
       name:
         type: string
     type: object
-  catalog.BooksQuery:
+  github.com_Vesninovich_go-tasks_book-store_catalog_rest.createAPIModel:
     properties:
       author:
-        items:
-          type: integer
-        type: array
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+        type: object
       categories:
         items:
-          items:
-            type: integer
-          type: array
-        type: array
-      count:
-        type: integer
-      from:
-        type: integer
-      id:
-        items:
-          type: integer
-        type: array
-    type: object
-  catalog.Category:
-    properties:
-      id:
-        items:
-          type: integer
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            parentID:
+              type: string
+          type: object
         type: array
       name:
         type: string
-      parentId:
-        items:
-          type: integer
-        type: array
     type: object
-host: localhost:8001
+  rest.apiModel:
+    properties:
+      author:
+        type: string
+      categories:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  rest.createAPIModel:
+    properties:
+      author:
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+        type: object
+      categories:
+        items:
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            parentID:
+              type: string
+          type: object
+        type: array
+      name:
+        type: string
+    type: object
+host: localhost:8002
 info:
   contact:
     email: dmitry@vesnin.work
@@ -84,63 +116,74 @@ info:
 paths:
   /book:
     get:
-      consumes:
-      - application/json
-      description: |-
-        get books according to query
-        if book ID is provided, only this book is returned (obviously)
+      description: get books according to query
       parameters:
-      - description: book query
-        in: body
-        name: query
-        required: true
-        schema:
-          $ref: '#/definitions/catalog.BooksQuery'
+      - description: results start
+        in: query
+        name: from
+        type: string
+      - description: results count
+        in: query
+        name: count
+        type: string
+      - description: book id
+        in: query
+        name: id
+        type: string
+      - description: author id
+        in: query
+        name: author
+        type: string
+      - description: category ids
+        in: query
+        items:
+          type: string
+        name: categories
+        type: array
       produces:
-      - application/x-json-stream
+      - application/json
       responses:
         "200":
-          description: books found according to query
+          description: results
           schema:
-            $ref: '#/definitions/catalog.Book'
+            items:
+              $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_catalog_rest.apiModel'
+            type: array
         "400":
-          description: bad query, e. g. malformed uuid
+          description: malformed query
           schema:
             type: string
         "500":
           description: internal error
           schema:
             type: string
-      summary: query books
+      summary: get books
       tags:
       - Book
     post:
       consumes:
       - application/json
-      description: |-
-        add new book to catalog
-        if nested objects are new (that is, they do not have an ID yet), they are created
-        if nested object has ID and it is not found, returns 404
+      description: create book
       parameters:
       - description: book data
         in: body
-        name: book
+        name: order
         required: true
         schema:
-          $ref: '#/definitions/catalog.BookCreateDTO'
+          $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_catalog_rest.createAPIModel'
       produces:
       - application/json
       responses:
         "200":
           description: created book
           schema:
-            $ref: '#/definitions/catalog.Book'
+            $ref: '#/definitions/book.Book'
         "400":
-          description: bad data
+          description: malformed data
           schema:
             type: string
         "404":
-          description: some data in book not found
+          description: nested author or category not found
           schema:
             type: string
         "500":

@@ -124,7 +124,7 @@ func (r *Repository) getSelectBooksStatement(from, count uint, query book.Query)
 	stmt += qStart + " b.deleted_at=$1 AND a.deleted_at=$1"
 	if from != 0 && query.ID.IsZero() {
 		stmt += fmt.Sprintf(`
-		OFFSET %d`, from)
+		OFFSET %d ROWS`, from)
 	}
 	if !query.ID.IsZero() {
 		count = 1
