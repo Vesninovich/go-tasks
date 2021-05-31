@@ -1,4 +1,4 @@
-package server_test
+package grpc_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	bookservice "github.com/Vesninovich/go-tasks/book-store/catalog/book/service"
 	categoryInMemory "github.com/Vesninovich/go-tasks/book-store/catalog/category/inmemory"
 	categoryservice "github.com/Vesninovich/go-tasks/book-store/catalog/category/service"
-	"github.com/Vesninovich/go-tasks/book-store/catalog/server"
+	cataloggrpc "github.com/Vesninovich/go-tasks/book-store/catalog/grpc"
 	"github.com/Vesninovich/go-tasks/book-store/common/book"
 	"github.com/Vesninovich/go-tasks/book-store/common/catalog"
 	pb "github.com/Vesninovich/go-tasks/book-store/common/catalog"
@@ -286,7 +286,7 @@ func setup(t *testing.T) *grpc.Server {
 		t.Fatalf("Failed to create category: %s", err)
 	}
 
-	pb.RegisterCatalogServer(s, server.New(bs))
+	pb.RegisterCatalogServer(s, cataloggrpc.New(bs))
 	go func() {
 		if err = s.Serve(lis); err != nil {
 			log.Fatalf("Failed to start gRPC server: %s", err)

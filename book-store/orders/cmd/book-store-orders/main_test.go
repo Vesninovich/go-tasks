@@ -14,9 +14,9 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/common/orders"
 	"github.com/Vesninovich/go-tasks/book-store/common/uuid"
 	catalogservice "github.com/Vesninovich/go-tasks/book-store/orders/catalog/service"
+	ordergrpc "github.com/Vesninovich/go-tasks/book-store/orders/grpc"
 	orderservice "github.com/Vesninovich/go-tasks/book-store/orders/order/service"
 	ordersql "github.com/Vesninovich/go-tasks/book-store/orders/order/sql"
-	"github.com/Vesninovich/go-tasks/book-store/orders/server"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc"
@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 
 	lis = bufconn.Listen(bufsize)
 	grpcServer := grpc.NewServer()
-	orders.RegisterOrdersServer(grpcServer, server.New(s))
+	orders.RegisterOrdersServer(grpcServer, ordergrpc.New(s))
 	log.Println("Starting gRPC server")
 	go func() {
 		if err = grpcServer.Serve(lis); err != nil {
@@ -83,14 +83,14 @@ func TestOrders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	created, err := client.CreateOrder(context.Background(), &orders.OrderCreateDTO{
+	created, err := client.CreateOrder(context.Background(), &orders.CreateDTO{
 		Description: "Test order",
 		Book:        bk.Id,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := client.GetOrder(context.Background(), &orders.OrderID{Id: created.Id})
+	res, err := client.GetOrder(context.Background(), &orders.ID{Id: created.Id})
 	if err != nil {
 		t.Fatal(err)
 	}

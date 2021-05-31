@@ -11,7 +11,7 @@ import (
 	booksql "github.com/Vesninovich/go-tasks/book-store/catalog/book/sql"
 	categoryservice "github.com/Vesninovich/go-tasks/book-store/catalog/category/service"
 	categorysql "github.com/Vesninovich/go-tasks/book-store/catalog/category/sql"
-	"github.com/Vesninovich/go-tasks/book-store/catalog/server"
+	cataloggrpc "github.com/Vesninovich/go-tasks/book-store/catalog/grpc"
 	pb "github.com/Vesninovich/go-tasks/book-store/common/catalog"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -54,7 +54,7 @@ func main() {
 	cs := categoryservice.New(cr)
 	bs := bookservice.New(br, as, cs)
 
-	pb.RegisterCatalogServer(grpcServer, server.New(bs))
+	pb.RegisterCatalogServer(grpcServer, cataloggrpc.New(bs))
 	log.Println("Starting gRPC server")
 	grpcServer.Serve(lis)
 }

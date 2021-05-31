@@ -9,9 +9,9 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/common/catalog"
 	"github.com/Vesninovich/go-tasks/book-store/common/orders"
 	catalogservice "github.com/Vesninovich/go-tasks/book-store/orders/catalog/service"
+	ordergrpc "github.com/Vesninovich/go-tasks/book-store/orders/grpc"
 	orderservice "github.com/Vesninovich/go-tasks/book-store/orders/order/service"
 	ordersql "github.com/Vesninovich/go-tasks/book-store/orders/order/sql"
-	"github.com/Vesninovich/go-tasks/book-store/orders/server"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc"
@@ -62,7 +62,7 @@ func main() {
 	s := orderservice.New(r, c)
 
 	grpcServer := grpc.NewServer()
-	orders.RegisterOrdersServer(grpcServer, server.New(s))
+	orders.RegisterOrdersServer(grpcServer, ordergrpc.New(s))
 	log.Println("Starting gRPC server")
 	grpcServer.Serve(lis)
 }
