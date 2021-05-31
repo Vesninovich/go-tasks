@@ -9,6 +9,9 @@ import (
 	"github.com/Vesninovich/go-tasks/book-store/common/commonerrors"
 )
 
+// REGEX is simple regexp for UUID string
+const REGEX = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+
 var random = rand.New(rand.NewSource(time.Now().Unix()))
 
 // UUID represents uuid

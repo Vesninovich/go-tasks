@@ -10,9 +10,10 @@ require (
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/swaggo/http-swagger v1.0.0 // indirect
 	github.com/swaggo/swag v1.7.0
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
-	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
+	golang.org/x/sys v0.0.0-20210531080801-fdfd190a6549 // indirect
 	golang.org/x/tools v0.1.2 // indirect
 	google.golang.org/grpc v1.38.0
 )

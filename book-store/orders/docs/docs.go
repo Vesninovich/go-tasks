@@ -33,56 +33,6 @@ var doc = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/order": {
-            "get": {
-                "description": "get order by id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Order"
-                ],
-                "summary": "get order",
-                "parameters": [
-                    {
-                        "description": "order id",
-                        "name": "id",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/orders.OrderID"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "requested order",
-                        "schema": {
-                            "$ref": "#/definitions/orders.Order"
-                        }
-                    },
-                    "400": {
-                        "description": "malformed id",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "requested order not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "place new book order",
                 "consumes": [
@@ -97,12 +47,19 @@ var doc = `{
                 "summary": "place order",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "order id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "order data",
                         "name": "order",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/orders.OrderCreateDTO"
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.createAPIModel"
                         }
                     }
                 ],
@@ -110,7 +67,7 @@ var doc = `{
                     "200": {
                         "description": "created order",
                         "schema": {
-                            "$ref": "#/definitions/orders.Order"
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel"
                         }
                     },
                     "400": {
@@ -133,51 +90,188 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/order/{id}": {
+            "get": {
+                "description": "get order by id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "get order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "order id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "requested order",
+                        "schema": {
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel"
+                        }
+                    },
+                    "400": {
+                        "description": "malformed id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "requested order not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "change order description",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "update description",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "order id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new description",
+                        "name": "description",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.descUpdAPIModel"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "updated order",
+                        "schema": {
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel"
+                        }
+                    },
+                    "400": {
+                        "description": "malformed order id or bad data",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "requested order not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "remove order",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Order"
+                ],
+                "summary": "remove order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "order id",
+                        "name": "order",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "removed order",
+                        "schema": {
+                            "$ref": "#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel"
+                        }
+                    },
+                    "400": {
+                        "description": "malformed order id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "requested order not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "orders.Order": {
+        "github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel": {
             "type": "object",
             "properties": {
-                "book": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "bookID": {
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
                 "id": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string"
                 }
             }
         },
-        "orders.OrderCreateDTO": {
+        "github.com_Vesninovich_go-tasks_book-store_orders_rest.createAPIModel": {
             "type": "object",
             "properties": {
-                "book": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "bookID": {
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
                 }
             }
         },
-        "orders.OrderID": {
+        "github.com_Vesninovich_go-tasks_book-store_orders_rest.descUpdAPIModel": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                "description": {
+                    "type": "string"
                 }
             }
         }
@@ -202,7 +296,7 @@ type swaggerInfo struct {
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = swaggerInfo{
 	Version:     "0.0",
-	Host:        "localhost:8002",
+	Host:        "localhost:8004",
 	BasePath:    "/",
 	Schemes:     []string{},
 	Title:       "Book Store Orders Service",
