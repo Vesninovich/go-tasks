@@ -5,11 +5,13 @@ option go_package = "github.com/Vesninovich/go-tasks/book-store/common/orders";
 package orders;
 
 service Orders {
-  rpc GetOrder(OrderID) returns (Order) {}
-  rpc CreateOrder(OrderCreateDTO) returns (Order) {}
+  rpc GetOrder(ID) returns (Order) {}
+  rpc CreateOrder(CreateDTO) returns (Order) {}
+  rpc UpdateOrderDescription(DescriptionUpdate) returns (Order) {}
+  rpc RemoveOrder(ID) returns (Order) {}
 }
 
-message OrderID {
+message ID {
   bytes id = 1;
 }
 
@@ -19,7 +21,12 @@ message Order {
   bytes book = 3;
 }
 
-message OrderCreateDTO {
+message CreateDTO {
   string description = 1;
   bytes book = 2;
+}
+
+message DescriptionUpdate {
+  bytes id = 1;
+  string description = 2;
 }
