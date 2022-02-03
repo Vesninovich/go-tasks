@@ -1,0 +1,199 @@
+basePath: /
+definitions:
+  book.Author:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  book.Book:
+    properties:
+      author:
+        $ref: '#/definitions/book.Author'
+      categories:
+        items:
+          $ref: '#/definitions/book.Category'
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  book.Category:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      parentID:
+        type: string
+    type: object
+  github.com_Vesninovich_go-tasks_book-store_catalog_rest.apiModel:
+    properties:
+      author:
+        type: string
+      categories:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  github.com_Vesninovich_go-tasks_book-store_catalog_rest.createAPIModel:
+    properties:
+      author:
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+        type: object
+      categories:
+        items:
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            parentID:
+              type: string
+          type: object
+        type: array
+      name:
+        type: string
+    type: object
+  rest.apiModel:
+    properties:
+      author:
+        type: string
+      categories:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  rest.createAPIModel:
+    properties:
+      author:
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+        type: object
+      categories:
+        items:
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            parentID:
+              type: string
+          type: object
+        type: array
+      name:
+        type: string
+    type: object
+host: localhost:8002
+info:
+  contact:
+    email: dmitry@vesnin.work
+    name: Dimas
+    url: https://github.com/Vesninovich
+  description: Service for creating and quering books catalog
+  license:
+    name: ISC
+    url: https://www.isc.org/licenses/
+  title: Book Store Catalog Service
+  version: "0.0"
+paths:
+  /book:
+    get:
+      description: get books according to query
+      parameters:
+      - description: results start
+        in: query
+        name: from
+        type: string
+      - description: results count
+        in: query
+        name: count
+        type: string
+      - description: book id
+        in: query
+        name: id
+        type: string
+      - description: author id
+        in: query
+        name: author
+        type: string
+      - description: category ids
+        in: query
+        items:
+          type: string
+        name: categories
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: results
+          schema:
+            items:
+              $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_catalog_rest.apiModel'
+            type: array
+        "400":
+          description: malformed query
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: get books
+      tags:
+      - Book
+    post:
+      consumes:
+      - application/json
+      description: create book
+      parameters:
+      - description: book data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_catalog_rest.createAPIModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: created book
+          schema:
+            $ref: '#/definitions/book.Book'
+        "400":
+          description: malformed data
+          schema:
+            type: string
+        "404":
+          description: nested author or category not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: create book
+      tags:
+      - Book
+swagger: "2.0"
+tags:
+- description: Quering and creating books
+  name: Book

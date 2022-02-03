@@ -1,0 +1,178 @@
+basePath: /
+definitions:
+  github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel:
+    properties:
+      bookID:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+    type: object
+  github.com_Vesninovich_go-tasks_book-store_orders_rest.createAPIModel:
+    properties:
+      bookID:
+        type: string
+      description:
+        type: string
+    type: object
+  github.com_Vesninovich_go-tasks_book-store_orders_rest.descUpdAPIModel:
+    properties:
+      description:
+        type: string
+    type: object
+host: localhost:8004
+info:
+  contact:
+    email: dmitry@vesnin.work
+    name: Dimas
+    url: https://github.com/Vesninovich
+  description: Service for placing and reading book orders
+  license:
+    name: ISC
+    url: https://www.isc.org/licenses/
+  title: Book Store Orders Service
+  version: "0.0"
+paths:
+  /order:
+    post:
+      consumes:
+      - application/json
+      description: place new book order
+      parameters:
+      - description: order id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: order data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.createAPIModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: created order
+          schema:
+            $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel'
+        "400":
+          description: malformed book id
+          schema:
+            type: string
+        "404":
+          description: requested book not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: place order
+      tags:
+      - Order
+  /order/{id}:
+    delete:
+      description: remove order
+      parameters:
+      - description: order id
+        in: path
+        name: order
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: removed order
+          schema:
+            $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel'
+        "400":
+          description: malformed order id
+          schema:
+            type: string
+        "404":
+          description: requested order not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: remove order
+      tags:
+      - Order
+    get:
+      description: get order by id
+      parameters:
+      - description: order id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: requested order
+          schema:
+            $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel'
+        "400":
+          description: malformed id
+          schema:
+            type: string
+        "404":
+          description: requested order not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: get order
+      tags:
+      - Order
+    put:
+      consumes:
+      - application/json
+      description: change order description
+      parameters:
+      - description: order id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: new description
+        in: body
+        name: description
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.descUpdAPIModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: updated order
+          schema:
+            $ref: '#/definitions/github.com_Vesninovich_go-tasks_book-store_orders_rest.apiModel'
+        "400":
+          description: malformed order id or bad data
+          schema:
+            type: string
+        "404":
+          description: requested order not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: update description
+      tags:
+      - Order
+swagger: "2.0"
+tags:
+- description: Requesting and placing orders
+  name: Order
